@@ -1,29 +1,43 @@
+<div align="center">
+
 [English](README.md) · **Français**
 
-<img src="docs/media/banner.svg" alt="vinted-sniper — être prévenu dès qu'une annonce correspond" width="640">
+<img src="docs/media/banner.svg" alt="vinted-sniper — être prévenu dès qu'une annonce correspond" width="620">
 
 [![CI](https://github.com/jasp-nerd/vinted-sniper/actions/workflows/ci.yml/badge.svg)](https://github.com/jasp-nerd/vinted-sniper/actions/workflows/ci.yml)
-[![Image](https://ghcr-badge.egpl.dev/jasp-nerd/vinted-sniper/latest_tag?label=image)](https://github.com/jasp-nerd/vinted-sniper/pkgs/container/vinted-sniper)
-[![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/)
-[![MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Image du conteneur](https://img.shields.io/badge/ghcr.io-vinted--sniper-2496ED?logo=docker&logoColor=white)](https://github.com/jasp-nerd/vinted-sniper/pkgs/container/vinted-sniper)
+[![Python 3.13+](https://img.shields.io/badge/python-3.13+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![MIT](https://img.shields.io/badge/licence-MIT-green)](LICENSE)
+
+Surveillez une recherche Vinted et recevez un message dès qu'une nouvelle annonce<br>
+correspond — sur Telegram, Discord, ou ailleurs.
+
+</div>
 
 > La version anglaise fait référence. Cette traduction peut avoir un temps de retard.
-
-Surveillez une recherche Vinted et recevez un message dès qu'une nouvelle annonce
-correspond — sur Telegram, Discord, ou ailleurs.
 
 Vous collez l'URL d'une recherche que vous avez déjà faite sur Vinted. L'outil vérifie cette
 recherche environ une fois par minute et vous signale les annonces qui n'y étaient pas avant.
 C'est tout.
 
-![Ajout d'une recherche en collant une URL Vinted, l'état de chaque recherche, et les annonces qui arrivent dans Discord et Telegram](docs/media/demo.gif)
+<div align="center">
+  <img src="docs/media/demo.gif" width="820" alt="Ajout d'une recherche en collant une URL Vinted, l'état de chaque recherche, et les annonces qui arrivent dans Discord et Telegram">
+</div>
 
-La même annonce, telle qu'elle arrive dans chacun :
+### La même annonce, telle qu'elle arrive dans chacun
 
-<p>
-  <img src="docs/media/discord.png" width="420" alt="Une notification Discord : titre, prix protection acheteurs comprise, taille, marque, état, vendeur et photo, avec les boutons pour ouvrir l'annonce, contacter le vendeur ou acheter">
-  <img src="docs/media/telegram.png" width="380" alt="La même notification dans Telegram : aperçu photo, prix protection acheteurs comprise, marque, taille, état, vendeur et les trois mêmes boutons">
-</p>
+<table>
+  <tr>
+    <td width="50%" valign="top" align="center">
+      <img src="docs/media/discord.png" alt="Une notification Discord : titre, prix protection acheteurs comprise, taille, marque, état, vendeur et photo, avec les boutons pour ouvrir l'annonce, contacter le vendeur ou acheter">
+      <br><sub><b>Discord</b> — un message par annonce, regroupés en encarts quand plusieurs arrivent d'un coup</sub>
+    </td>
+    <td width="50%" valign="top" align="center">
+      <img src="docs/media/telegram.png" alt="La même notification dans Telegram : aperçu photo, prix protection acheteurs comprise, marque, taille, état, vendeur et les trois mêmes boutons">
+      <br><sub><b>Telegram</b> — la photo en aperçu, pour que le message garde ses boutons</sub>
+    </td>
+  </tr>
+</table>
 
 ## Ce qui change par rapport aux autres
 

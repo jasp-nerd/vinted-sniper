@@ -1,26 +1,40 @@
+<div align="center">
+
 **English** · [Français](README.fr.md)
 
-<img src="docs/media/banner.svg" alt="vinted-sniper — get told the moment something matches" width="640">
+<img src="docs/media/banner.svg" alt="vinted-sniper — get told the moment something matches" width="620">
 
 [![CI](https://github.com/jasp-nerd/vinted-sniper/actions/workflows/ci.yml/badge.svg)](https://github.com/jasp-nerd/vinted-sniper/actions/workflows/ci.yml)
-[![Image](https://ghcr-badge.egpl.dev/jasp-nerd/vinted-sniper/latest_tag?label=image)](https://github.com/jasp-nerd/vinted-sniper/pkgs/container/vinted-sniper)
-[![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/)
-[![MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Container image](https://img.shields.io/badge/ghcr.io-vinted--sniper-2496ED?logo=docker&logoColor=white)](https://github.com/jasp-nerd/vinted-sniper/pkgs/container/vinted-sniper)
+[![Python 3.13+](https://img.shields.io/badge/python-3.13+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-Watch a Vinted search and get a message when something new matches — in Telegram, Discord,
-or wherever else you want it.
+Watch a Vinted search and get a message when something new matches —<br>
+in Telegram, Discord, or wherever else you want it.
+
+</div>
 
 You paste the URL of a search you already made on Vinted. It checks that search every minute
 or so and tells you about listings that weren't there before. That's the whole idea.
 
-![Adding a search by pasting a Vinted URL, the saved searches with their health, and the listings arriving in Discord and Telegram](docs/media/demo.gif)
+<div align="center">
+  <img src="docs/media/demo.gif" width="820" alt="Adding a search by pasting a Vinted URL, the saved searches with their health, and the listings arriving in Discord and Telegram">
+</div>
 
-The same listing, as it arrives in each:
+### The same listing, as it arrives in each
 
-<p>
-  <img src="docs/media/discord.png" width="420" alt="A Discord notification showing the title, the price with buyer protection included, size, brand, condition, seller and photo, with buttons to open the listing, message the seller, or buy">
-  <img src="docs/media/telegram.png" width="380" alt="The same kind of notification in Telegram: photo preview, price with buyer protection included, brand, size, condition, seller, and the same three buttons">
-</p>
+<table>
+  <tr>
+    <td width="50%" valign="top" align="center">
+      <img src="docs/media/discord.png" alt="A Discord notification showing the title, the price with buyer protection included, size, brand, condition, seller and photo, with buttons to open the listing, message the seller, or buy">
+      <br><sub><b>Discord</b> — one message per listing, batched into embeds when several land at once</sub>
+    </td>
+    <td width="50%" valign="top" align="center">
+      <img src="docs/media/telegram.png" alt="The same kind of notification in Telegram: photo preview, price with buyer protection included, brand, size, condition, seller, and the same three buttons">
+      <br><sub><b>Telegram</b> — photo as a preview, so the message keeps its buttons</sub>
+    </td>
+  </tr>
+</table>
 
 ## What it does that others don't
 
