@@ -120,9 +120,12 @@ docker compose logs --tail 50 vinted-sniper
 docker compose ps
 ```
 
-If the container is restarting repeatedly, the logs will say why. The most common cause is
-`VINTED_SNIPER_WEB_ENABLED=true` without a `VINTED_SNIPER_WEB_AUTH_TOKEN`, which is refused
-on purpose.
+If the container is restarting repeatedly, the logs will say why.
+
+Also worth grepping the logs for `web.no_password`: that warning means the dashboard is
+listening on an address other than localhost with no sign-in, so anyone who can reach the
+port can read your webhook URLs. Either set `VINTED_SNIPER_WEB_AUTH_TOKEN` or check that the
+published port is not public.
 
 ## Telegram never connects
 

@@ -21,6 +21,16 @@ MIN_POLL_INTERVAL_S = 10
 MAX_BACKOFF_S = 900
 
 
+def _in_container() -> bool:
+    """Whether we are inside Docker or Podman.
+
+    There, 0.0.0.0 is the only bind that works with published ports, and how far the
+    dashboard is exposed is decided by the port mapping, which the app cannot see. The
+    shipped docker-compose.yml publishes to the host's loopback only.
+    """
+    return Path("/.dockerenv").exists() or Path("/run/.containerenv").exists()
+
+
 class Settings(BaseSettings):
     """Static configuration. Every field is documented in docs/configuration.md."""
 
@@ -119,7 +129,7 @@ class Settings(BaseSettings):
     mock_scenario_dir: Path | None = None
 
     # --- Web UI --------------------------------------------------------------------
-    web_enabled: bool = False
+    web_enabled: bool = True
     web_host: str = Field(
         default="127.0.0.1",
         description="Loopback by default. Only widen this behind a reverse proxy you trust.",
@@ -127,19 +137,32 @@ class Settings(BaseSettings):
     web_port: int = Field(default=8000, ge=1, le=65535)
     web_auth_token: SecretStr | None = Field(
         default=None,
-        description="Required when the web UI is enabled. The app refuses to start without it.",
+        description="Optional. When set, the dashboard asks for it as a password. Set it "
+        "before exposing the dashboard beyond localhost: it shows your webhook URLs.",
     )
+
+    @property
+    def web_is_loopback(self) -> bool:
+        """Whether the dashboard is reachable only from this machine."""
+        return self.web_host in {"127.0.0.1", "localhost", "::1"}
 
     @model_validator(mode="after")
     def _check_coherent(self) -> Settings:
-        if self.web_enabled and self.web_auth_token is None:
-            raise ValueError(
-                "VINTED_SNIPER_WEB_ENABLED is true but VINTED_SNIPER_WEB_AUTH_TOKEN is not set. "
-                "The web UI exposes your searches and destinations, so it will not start "
-                "unauthenticated. Generate one with: openssl rand -hex 32"
-            )
         if self.fetch_mode == "mock" and self.mock_scenario_dir is None:
             raise ValueError(
                 "VINTED_SNIPER_FETCH_MODE is 'mock' but VINTED_SNIPER_MOCK_SCENARIO_DIR is not set."
             )
         return self
+
+    @property
+    def web_is_exposed_without_a_password(self) -> bool:
+        """Whether the dashboard could be reached from another machine with no sign-in.
+
+        Not treated as fatal: refusing would stop `docker compose up` working at all. And
+        inside a container this stays quiet, because 0.0.0.0 is the only bind that works
+        there and the port mapping — which the app cannot see — is what actually decides
+        who can reach it.
+        """
+        if not self.web_enabled or self.web_auth_token is not None:
+            return False
+        return not self.web_is_loopback and not _in_container()

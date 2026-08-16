@@ -6,9 +6,11 @@
     {% if snapshot.alive %}running{% else %}not responding{% endif %}
     · {{ snapshot.queued_notifications }} queued
   </span>
+  {% if auth_enabled %}
   <form method="post" action="/logout" class="inline">
     <button class="quiet" type="submit">Sign out</button>
   </form>
+  {% endif %}
 {% endblock %}
 
 {% block content %}

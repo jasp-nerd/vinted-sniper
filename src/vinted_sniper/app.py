@@ -233,7 +233,16 @@ class Application:
             log.exception("telegram_bot.failed", error=str(exc))
 
     async def _run_web(self, repo: Repo) -> None:
-        from vinted_sniper.web.server import serve  # noqa: PLC0415
+        try:
+            from vinted_sniper.web.server import serve  # noqa: PLC0415
+        except ImportError:
+            # The dashboard is on by default but its dependencies are an extra, so a
+            # bare install shouldn't die over it — the poller is the point.
+            log.warning(
+                "web.unavailable",
+                hint="install the web extra to get the dashboard: uv sync --extra web",
+            )
+            return
 
         try:
             await serve(self._settings, repo, self._stop)

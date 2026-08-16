@@ -8,8 +8,10 @@ It also answers the question the issue trackers of similar tools are full of —
 stop?" — by showing, per search, when it last succeeded, what the last error was, and
 whether the catalog has gone quiet. Nothing here is guessed from silence.
 
-Authentication is required, not optional. The database holds your webhook URLs and chat
-ids, so an unauthenticated dashboard would be a way to hand them out.
+It listens on localhost and opens straight onto the dashboard — nothing to sign in to.
+Setting VINTED_SNIPER_WEB_AUTH_TOKEN puts a password on it, which is the right move before
+exposing it beyond your own machine: the database holds your webhook URLs and chat ids,
+and an open dashboard on a public port would be a way to hand them out.
 """
 
 from __future__ import annotations
@@ -42,23 +44,23 @@ TEMPLATES = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 SESSION_COOKIE = "vinted_sniper_session"
 
 
-def _check_token(supplied: str | None, expected: SecretStr) -> bool:
+def _authorised(supplied: str | None, expected: SecretStr | None) -> bool:
+    if expected is None:
+        return True
     if not supplied:
         return False
     return secrets.compare_digest(supplied, expected.get_secret_value())
 
 
 def create_app(settings: Settings, repo: Repo) -> FastAPI:
-    if settings.web_auth_token is None:  # pragma: no cover - Settings enforces this
-        raise RuntimeError("the web UI cannot start without an access token")
-    token = settings.web_auth_token
+    token = settings.web_auth_token  # None means no password: the dashboard just opens
 
     app = FastAPI(title="vinted-sniper", docs_url=None, redoc_url=None)
 
     async def require_login(
         session: Annotated[str | None, Cookie(alias=SESSION_COOKIE)] = None,
     ) -> None:
-        if not _check_token(session, token):
+        if not _authorised(session, token):
             raise HTTPException(status_code=401, detail="not signed in")
 
     guard = Depends(require_login)
@@ -74,11 +76,15 @@ def create_app(settings: Settings, repo: Repo) -> FastAPI:
 
     @app.get("/login", response_class=HTMLResponse)
     async def login_form(request: Request) -> Response:
+        if token is None:
+            return RedirectResponse("/", status_code=303)
         return TEMPLATES.TemplateResponse(request, "login.html", {"error": None})
 
     @app.post("/login")
     async def login(request: Request, access_token: Annotated[str, Form()]) -> Response:
-        if not _check_token(access_token, token):
+        if token is None:
+            return RedirectResponse("/", status_code=303)
+        if not _authorised(access_token, token):
             return TEMPLATES.TemplateResponse(
                 request,
                 "login.html",
@@ -108,7 +114,7 @@ def create_app(settings: Settings, repo: Repo) -> FastAPI:
         request: Request,
         session: Annotated[str | None, Cookie(alias=SESSION_COOKIE)] = None,
     ) -> Response:
-        if not _check_token(session, token):
+        if not _authorised(session, token):
             return RedirectResponse("/login", status_code=303)
 
         snapshot = await health.snapshot(repo)
@@ -119,6 +125,7 @@ def create_app(settings: Settings, repo: Repo) -> FastAPI:
             {
                 "snapshot": snapshot,
                 "destinations": destinations,
+                "auth_enabled": token is not None,
                 "recent": await repo.recent_items(limit=25),
                 "now": int(time.time()),
                 "min_interval": MIN_POLL_INTERVAL_S,
@@ -234,7 +241,7 @@ def create_app(settings: Settings, repo: Repo) -> FastAPI:
     @app.get("/rss/{query_id}.xml")
     async def rss(query_id: int, key: str = "") -> Response:
         # Feed readers cannot log in, so the token travels in the query string here.
-        if not _check_token(key, token):
+        if not _authorised(key, token):
             raise HTTPException(status_code=401, detail="add ?key=<your token>")
         query = await repo.get_query(query_id)
         if query is None:
@@ -314,6 +321,13 @@ async def serve(settings: Settings, repo: Repo, stop: asyncio.Event) -> None:
     server = _QuietServer(config)
     serving = asyncio.create_task(server.serve())
     log.info("web.listening", host=settings.web_host, port=settings.web_port)
+    if settings.web_is_exposed_without_a_password:
+        log.warning(
+            "web.no_password",
+            host=settings.web_host,
+            hint="the dashboard shows your webhook URLs; keep the published port on "
+            "127.0.0.1 or set VINTED_SNIPER_WEB_AUTH_TOKEN",
+        )
     await stop.wait()
     server.should_exit = True
     await serving

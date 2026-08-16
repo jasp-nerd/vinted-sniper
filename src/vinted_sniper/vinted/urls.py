@@ -147,6 +147,26 @@ def catalog_endpoint(tld: str) -> str:
     return f"https://www.vinted.{tld}/api/v2/catalog/items"
 
 
+def brands_endpoint(tld: str) -> str:
+    """Brand autocomplete, the same one the site's search box uses."""
+    return f"https://www.vinted.{tld}/api/v2/brands"
+
+
+def filters_search_endpoint(tld: str) -> str:
+    """Search within one filter's options — e.g. brands that exist in a category."""
+    return f"https://www.vinted.{tld}/api/v2/catalog/filters/search"
+
+
+def filters_facets_endpoint(tld: str) -> str:
+    """The options of one filter (condition, colour, size…), scoped to a category."""
+    return f"https://www.vinted.{tld}/api/v2/catalog/filters/facets"
+
+
+def catalog_page(tld: str) -> str:
+    """The search page itself — its HTML embeds the category tree and the CSRF token."""
+    return f"https://www.vinted.{tld}/catalog"
+
+
 def site_root(tld: str) -> str:
     return f"https://www.vinted.{tld}/"
 

@@ -90,9 +90,10 @@ docker compose exec vinted-sniper vinted-sniper destination discord "https://dis
 docker compose exec vinted-sniper vinted-sniper watch "https://www.vinted.fr/catalog?search_text=nike+air+max&price_to=40"
 ```
 
-Pour utiliser le tableau de bord plutôt que la ligne de commande, mettez
-`VINTED_SNIPER_WEB_ENABLED=true` et `VINTED_SNIPER_WEB_AUTH_TOKEN` dans `.env` (générez-en un
-avec `openssl rand -hex 32`), puis ouvrez http://localhost:8000.
+Le tableau de bord tourne déjà sur http://localhost:8000. Il n'a pas de mot de passe, car il
+n'écoute que sur localhost : qui peut l'atteindre est déjà sur la machine. Si vous l'exposez
+au-delà, définissez d'abord `VINTED_SNIPER_WEB_AUTH_TOKEN` dans `.env` (`openssl rand -hex 32`),
+puisqu'il affiche vos URL de webhook.
 
 Pour vérifier d'abord que Vinted répond depuis votre machine :
 

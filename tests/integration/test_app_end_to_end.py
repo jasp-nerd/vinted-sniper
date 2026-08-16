@@ -66,6 +66,9 @@ def offline_settings(tmp_path: Path) -> Settings:
         poll_default_interval_s=10,
         first_run_mode="newest",
         log_level="WARNING",
+        # No dashboard here: these tests are about the polling loop, and binding a real
+        # port would make them fail whenever anything else is using it.
+        web_enabled=False,
     )
 
 

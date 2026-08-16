@@ -34,10 +34,13 @@ WORKDIR /app
 COPY --from=build --chown=sniper:sniper /app/.venv /app/.venv
 COPY --from=build --chown=sniper:sniper /app/src /app/src
 
+# The web host is 0.0.0.0 *inside the container* so the published port can reach it;
+# docker-compose.yml maps it to the host's localhost only.
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     VINTED_SNIPER_DB_PATH=/data/app.db \
-    VINTED_SNIPER_LOG_FORMAT=json
+    VINTED_SNIPER_LOG_FORMAT=json \
+    VINTED_SNIPER_WEB_HOST=0.0.0.0
 
 RUN mkdir -p /data && chown sniper:sniper /data
 VOLUME ["/data"]

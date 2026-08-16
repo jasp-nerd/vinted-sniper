@@ -90,9 +90,28 @@ def test_the_health_check_needs_no_token(client: TestClient) -> None:
     assert "alive" in response.json()
 
 
-def test_a_dashboard_without_a_token_refuses_to_be_built(tmp_path: Path, repo: Repo) -> None:
-    with pytest.raises(ValueError, match="WEB_AUTH_TOKEN"):
-        Settings(_env_file=None, db_path=tmp_path / "a.db", web_enabled=True)  # type: ignore[call-arg]
+def test_without_a_token_the_dashboard_is_open(tmp_path: Path, repo: Repo) -> None:
+    """The default for a localhost dashboard: no password, no sign-in page."""
+    settings = Settings(_env_file=None, db_path=tmp_path / "a.db", web_enabled=True)  # type: ignore[call-arg]
+
+    with TestClient(create_app(settings, repo)) as client:
+        assert client.get("/", follow_redirects=False).status_code == 200
+        assert client.get("/api/health").status_code == 200
+        # The sign-in page has nothing to ask for, so it sends you to the dashboard.
+        assert client.get("/login", follow_redirects=False).status_code == 303
+
+
+async def test_without_a_token_the_feed_needs_no_key(tmp_path: Path, repo: Repo) -> None:
+    settings = Settings(_env_file=None, db_path=tmp_path / "b.db", web_enabled=True)  # type: ignore[call-arg]
+
+    with TestClient(create_app(settings, repo)) as client:
+        client.post(
+            "/searches",
+            data={"url": "https://www.vinted.fr/catalog?search_text=nike"},
+            follow_redirects=False,
+        )
+        query_id = (await repo.list_queries())[0].id
+        assert client.get(f"/rss/{query_id}.xml").status_code == 200
 
 
 # --- Using it -----------------------------------------------------------------------

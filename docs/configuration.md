@@ -57,8 +57,8 @@ Every variable is prefixed `VINTED_SNIPER_`. All of them are optional except whe
 
 | Variable | Default | What it does |
 |---|---|---|
-| `WEB_ENABLED` | `false` | Turn the dashboard on. |
-| `WEB_AUTH_TOKEN` | unset | **Required when the dashboard is on.** The app refuses to start without it. Generate with `openssl rand -hex 32`. |
+| `WEB_ENABLED` | `true` | The dashboard. Turn it off if you only use the CLI. |
+| `WEB_AUTH_TOKEN` | unset | Optional. With no token the dashboard has no sign-in, which is fine while it listens on localhost. **Set one before exposing it further** — it shows your webhook URLs and chat ids. Generate with `openssl rand -hex 32`. |
 | `WEB_HOST` | `127.0.0.1` | Loopback by default. Only widen behind a reverse proxy you trust. |
 | `WEB_PORT` | `8000` | |
 

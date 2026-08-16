@@ -85,9 +85,10 @@ docker compose exec vinted-sniper vinted-sniper destination discord "https://dis
 docker compose exec vinted-sniper vinted-sniper watch "https://www.vinted.fr/catalog?search_text=nike+air+max&price_to=40"
 ```
 
-To use the dashboard instead of the command line, set `VINTED_SNIPER_WEB_ENABLED=true` and
-`VINTED_SNIPER_WEB_AUTH_TOKEN` in `.env` (generate one with `openssl rand -hex 32`), then open
-http://localhost:8000.
+The dashboard is already running at http://localhost:8000. It has no password, because it
+only listens on localhost — anyone who can reach it is already on the machine. If you expose
+it beyond that, set `VINTED_SNIPER_WEB_AUTH_TOKEN` in `.env` first (`openssl rand -hex 32`),
+since the dashboard shows your webhook URLs.
 
 Before setting anything up, you can check that Vinted is reachable from your machine:
 
