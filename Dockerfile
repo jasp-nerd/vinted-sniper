@@ -21,7 +21,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 
 # Runtime stage: the virtualenv and the code, nothing else.
-FROM python:3.13-slim-trixie
+FROM python:3.14-slim-trixie
 
 # curl is here for the health check and for the connection test in the troubleshooting
 # guide, which is the first thing anyone reaches for when listings stop arriving.
