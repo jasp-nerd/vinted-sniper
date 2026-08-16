@@ -29,9 +29,13 @@ log = get_logger(__name__)
 MAX_EMBEDS = 10
 
 # Above this many listings at once, one message per listing turns into a wall. Batching
-# them into embeds keeps it readable — at the cost of the per-listing buttons, which live
-# on the message rather than the embed.
+# them into embeds keeps it readable.
 BUTTON_THRESHOLD = 3
+
+# A message holds at most five rows of buttons, so a batch up to this size can give each
+# listing its own row, tied to its embed by number. Past that the links move into the
+# embeds themselves.
+MAX_BUTTON_ROWS = 5
 
 # The documented per-webhook limit is around five requests every two seconds, but webhooks
 # in the same server have been observed sharing one allowance. One request every half
@@ -89,8 +93,17 @@ class DiscordSender:
                 )
             return SendResult.ok(delivered)
 
-        payload = {"embeds": [_embed(n.item, n.query_name) for n in batch[:MAX_EMBEDS]]}
-        return await self._post(payload, [n.outbox_id for n in batch[:MAX_EMBEDS]])
+        chunk = batch[:MAX_EMBEDS]
+        if len(chunk) <= MAX_BUTTON_ROWS:
+            payload = {
+                "embeds": [
+                    _embed(n.item, n.query_name, number=i) for i, n in enumerate(chunk, start=1)
+                ],
+                "components": [_button_row(n.item, i) for i, n in enumerate(chunk, start=1)],
+            }
+        else:
+            payload = {"embeds": [_embed(n.item, n.query_name, link_field=True) for n in chunk]}
+        return await self._post(payload, [n.outbox_id for n in chunk])
 
     async def send_status(self, message: str) -> None:
         await self._post({"content": message[:2000]}, [])
@@ -169,7 +182,29 @@ class DiscordSender:
             await self._client.aclose()
 
 
-def _embed(item: Item, query_name: str) -> dict[str, Any]:
+def _button_row(item: Item, number: int) -> dict[str, Any]:
+    """One row of link buttons for one listing in a batched message.
+
+    The number ties the row to its embed, whose title carries the same prefix. No "open"
+    button: that numbered title is already the listing link.
+    """
+    return {
+        "type": 1,
+        "components": [
+            {
+                "type": 2,
+                "style": LINK_BUTTON,
+                "label": f"#{number} Message seller",
+                "url": item.message_url,
+            },
+            {"type": 2, "style": LINK_BUTTON, "label": f"#{number} Buy", "url": item.buy_url},
+        ],
+    }
+
+
+def _embed(
+    item: Item, query_name: str, *, number: int | None = None, link_field: bool = False
+) -> dict[str, Any]:
     fields: list[dict[str, Any]] = [{"name": "Price", "value": item.price_line(), "inline": True}]
     if item.size:
         fields.append({"name": "Size", "value": item.size[:1024], "inline": True})
@@ -191,9 +226,18 @@ def _embed(item: Item, query_name: str) -> dict[str, Any]:
                 "inline": True,
             }
         )
+    if link_field:
+        fields.append(
+            {
+                "name": "Links",
+                "value": f"[Message seller]({item.message_url}) · [Buy]({item.buy_url})",
+                "inline": True,
+            }
+        )
 
+    title = item.title if number is None else f"#{number} · {item.title}"
     embed: dict[str, Any] = {
-        "title": item.title[:256],
+        "title": title[:256],
         # Distinct per listing on purpose: Discord folds together embeds that share a URL.
         "url": item.url,
         "color": BRAND_COLOUR,

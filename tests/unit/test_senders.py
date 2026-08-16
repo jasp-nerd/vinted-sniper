@@ -102,6 +102,40 @@ async def test_many_listings_are_batched_into_one_message() -> None:
     assert len(recorder.payload()["embeds"]) == 6
 
 
+async def test_a_mid_size_batch_keeps_a_numbered_button_row_per_listing() -> None:
+    recorder = Recorder()
+    sender = DiscordSender(
+        {"webhook_url": "https://discord.test/hook"},
+        client=recorder.client(),
+        bucket=fast_bucket(),
+    )
+
+    await sender.send([notification(i) for i in range(1, 6)])
+
+    payload = recorder.payload()
+    assert len(payload["components"]) == 5, "one row per listing, matched to its embed"
+    assert payload["embeds"][2]["title"].startswith("#3 · ")
+    labels = [c["label"] for c in payload["components"][2]["components"]]
+    assert labels == ["#3 Message seller", "#3 Buy"]
+
+
+async def test_a_large_batch_moves_the_links_into_each_embed() -> None:
+    recorder = Recorder()
+    sender = DiscordSender(
+        {"webhook_url": "https://discord.test/hook"},
+        client=recorder.client(),
+        bucket=fast_bucket(),
+    )
+
+    await sender.send([notification(i) for i in range(1, 7)])
+
+    payload = recorder.payload()
+    assert "components" not in payload, "six rows of buttons would exceed Discord's five"
+    links = payload["embeds"][0]["fields"][-1]
+    assert links["name"] == "Links"
+    assert "Message seller" in links["value"] and "Buy" in links["value"]
+
+
 async def test_every_embed_carries_its_own_listing_link() -> None:
     recorder = Recorder()
     sender = DiscordSender(
