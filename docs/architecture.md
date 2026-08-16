@@ -19,7 +19,7 @@ and every extra moving part is another thing that can be broken at three in the 
 
    watchdog    reads state across searches, spots a frozen catalog
    heartbeat   writes a timestamp the health check reads
-   web         optional dashboard over the same database
+   web         dashboard over the same database, on by default
 ```
 
 ## The parts
