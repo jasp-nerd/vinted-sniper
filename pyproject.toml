@@ -15,7 +15,7 @@ classifiers = [
     "Topic :: Internet :: WWW/HTTP",
 ]
 dependencies = [
-    "httpx[brotli,zstd]>=0.28",
+    "httpx[brotli,zstd]>=0.28.1",
     "aiosqlite>=0.20",
     "pydantic>=2.10",
     "pydantic-settings>=2.7",
@@ -28,7 +28,7 @@ dependencies = [
 # Kept optional because curl_cffi ships compiled wheels that complicate ARM installs.
 impersonate = ["curl_cffi>=0.7"]
 # python-multipart is what lets FastAPI read the dashboard's form posts.
-web = ["fastapi>=0.115", "uvicorn[standard]>=0.34", "jinja2>=3.1", "python-multipart>=0.0.20"]
+web = ["fastapi>=0.115", "uvicorn[standard]>=0.52.1", "jinja2>=3.1", "python-multipart>=0.0.20"]
 
 [project.scripts]
 vinted-sniper = "vinted_sniper.cli:main"
@@ -41,7 +41,7 @@ Issues = "https://github.com/jasp-nerd/vinted-sniper/issues"
 dev = [
     "pytest>=8.3",
     "pytest-asyncio>=0.25",
-    "coverage[toml]>=7.6",
+    "coverage[toml]>=7.15.4",
     "ruff>=0.9",
     "mypy>=1.14",
     "deptry>=0.21",
