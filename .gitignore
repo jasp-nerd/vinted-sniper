@@ -1,0 +1,20 @@
+.venv/
+__pycache__/
+*.py[cod]
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Runtime data and secrets — never commit these.
+.env
+data/
+*.db
+*.db-wal
+*.db-shm
+
+.DS_Store

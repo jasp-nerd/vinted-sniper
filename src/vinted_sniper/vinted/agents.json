@@ -1,0 +1,78 @@
+{
+  "comment": "Browser identities to blend in with, weighted by rough desktop market share. Refresh these when they age: a browser version nobody still runs stands out as much as no version at all. See docs/troubleshooting.md.",
+  "updated": "2026-08",
+  "agents": [
+    {
+      "share": 34,
+      "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+      "brand": "Chromium",
+      "version": "140",
+      "platform": "Windows",
+      "mobile": false
+    },
+    {
+      "share": 12,
+      "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36",
+      "brand": "Chromium",
+      "version": "139",
+      "platform": "Windows",
+      "mobile": false
+    },
+    {
+      "share": 11,
+      "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0",
+      "brand": "Microsoft Edge",
+      "version": "140",
+      "platform": "Windows",
+      "mobile": false
+    },
+    {
+      "share": 10,
+      "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+      "brand": "Chromium",
+      "version": "140",
+      "platform": "macOS",
+      "mobile": false
+    },
+    {
+      "share": 9,
+      "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Safari/605.1.15",
+      "brand": "Safari",
+      "version": "18",
+      "platform": "macOS",
+      "mobile": false
+    },
+    {
+      "share": 8,
+      "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:141.0) Gecko/20100101 Firefox/141.0",
+      "brand": "Firefox",
+      "version": "141",
+      "platform": "Windows",
+      "mobile": false
+    },
+    {
+      "share": 6,
+      "ua": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+      "brand": "Chromium",
+      "version": "140",
+      "platform": "Linux",
+      "mobile": false
+    },
+    {
+      "share": 5,
+      "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14.6; rv:141.0) Gecko/20100101 Firefox/141.0",
+      "brand": "Firefox",
+      "version": "141",
+      "platform": "macOS",
+      "mobile": false
+    },
+    {
+      "share": 5,
+      "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36",
+      "brand": "Chromium",
+      "version": "138",
+      "platform": "Windows",
+      "mobile": false
+    }
+  ]
+}

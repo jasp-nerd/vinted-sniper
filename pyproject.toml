@@ -1,0 +1,124 @@
+[project]
+name = "vinted-sniper"
+version = "0.1.0"
+description = "Watch Vinted searches and get notified the moment something matches."
+readme = "README.md"
+requires-python = ">=3.13"
+license = "MIT"
+authors = [{ name = "vinted-sniper contributors" }]
+keywords = ["vinted", "scraper", "notifier", "telegram", "discord"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: WWW/HTTP",
+]
+dependencies = [
+    "httpx[brotli,zstd]>=0.28",
+    "aiosqlite>=0.20",
+    "pydantic>=2.10",
+    "pydantic-settings>=2.7",
+    "structlog>=25.1",
+    "aiogram>=3.17",
+]
+
+[project.optional-dependencies]
+# TLS impersonation, only needed if plain httpx starts getting blocked.
+# Kept optional because curl_cffi ships compiled wheels that complicate ARM installs.
+impersonate = ["curl_cffi>=0.7"]
+web = ["fastapi>=0.115", "uvicorn[standard]>=0.34", "jinja2>=3.1"]
+
+[project.scripts]
+vinted-sniper = "vinted_sniper.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/jasp/vinted-sniper"
+Issues = "https://github.com/jasp/vinted-sniper/issues"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.25",
+    "coverage[toml]>=7.6",
+    "ruff>=0.9",
+    "mypy>=1.14",
+    "deptry>=0.21",
+    "vulture>=2.14",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/vinted_sniper"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",    # pycodestyle
+    "F",         # pyflakes
+    "I",         # isort
+    "N",         # pep8-naming
+    "UP",        # pyupgrade
+    "B",         # bugbear
+    "C4",        # comprehensions
+    "SIM",       # simplify
+    "ASYNC",     # async correctness (blocking calls in coroutines)
+    "BLE",       # blind except
+    "ARG",       # unused arguments
+    "ERA",       # commented-out code
+    "C90",       # mccabe complexity
+    "PL",        # pylint subset
+    "RUF",
+]
+ignore = [
+    "PLR0913",  # many arguments: senders and builders legitimately take several
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests may use assert-heavy, longer, less-abstract code.
+"tests/**" = ["PLR2004", "ARG001", "ARG002"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+files = ["src", "tests"]
+warn_unreachable = true
+enable_error_code = ["redundant-expr", "possibly-undefined", "truthy-bool"]
+
+[[tool.mypy.overrides]]
+module = ["curl_cffi.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-q --strict-markers --strict-config"
+filterwarnings = ["error"]
+
+[tool.coverage.run]
+source = ["src/vinted_sniper"]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = ["pragma: no cover", "if TYPE_CHECKING:", "raise NotImplementedError"]
+
+[tool.deptry]
+known_first_party = ["vinted_sniper"]
+
+[tool.deptry.per_rule_ignores]
+# Optional extras are imported lazily behind config flags.
+DEP002 = ["curl_cffi", "fastapi", "uvicorn", "jinja2"]
+
+[tool.vulture]
+min_confidence = 80
+paths = ["src"]
