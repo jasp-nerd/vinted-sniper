@@ -31,6 +31,11 @@ Every variable is prefixed `VINTED_SNIPER_`. All of them are optional except whe
 | `FIRST_RUN_MODE` | `silent` | What a brand-new search does first time: `silent` notifies nothing, `newest` sends exactly one listing so you can confirm delivery works. |
 | `REQUEST_TIMEOUT_S` | `15` | How long to wait for Vinted before giving up on one request. |
 
+The 10-second floor is not caution for its own sake: Vinted's own API lags minutes behind
+what people upload, sometimes longer, so checking faster finds nothing sooner and does get
+you blocked. Each notification shows both when Vinted says the listing appeared and when it
+was found, so you can see the real delay yourself.
+
 ### Staying unblocked
 
 | Variable | Default | What it does |
@@ -97,9 +102,32 @@ Options for `watch`:
 | `--exclude a,b,c` | Skip listings whose title contains any of these words. |
 | `--to 1,2` | Destination ids to notify. Defaults to all active ones. |
 
-## Destination settings
+## Adding a search
 
-Stored per destination. The dashboard and `vinted-sniper destination` fill these in for you.
+Search on Vinted, set your filters, copy the address bar, and paste that URL into the
+dashboard or `vinted-sniper watch`. The dashboard can also build the URL for you, from
+Vinted's own categories, brand autocomplete and filters.
+
+Any country site works: `vinted.fr`, `.de`, `.nl`, `.co.uk`, `.com`, and the rest. The site
+you copied from is the site it watches, and the links you get back point there too. Tracking
+parameters are stripped, so pasting the same search twice counts as one search.
+
+## Destinations
+
+Where to get each kind of target:
+
+| Kind | Setup |
+|---|---|
+| `discord` | In your server: Settings → Integrations → Webhooks → New Webhook → Copy URL. Nothing to invite, nothing to host. |
+| `telegram` | Create a bot with [@BotFather](https://t.me/BotFather), set `TELEGRAM_BOT_TOKEN`, then run `vinted-sniper pair-telegram` and tap the link it prints. It finds your chat id for you. |
+| `ntfy` | Pick a topic name, install the ntfy app. No account. |
+| `webhook` | Any URL you control: n8n, Home Assistant, a script. Payload below. |
+
+Each search can go to its own set of destinations, so a Discord channel for one thing and
+your phone for another is normal.
+
+What is stored per destination — the dashboard and `vinted-sniper destination` fill these in
+for you:
 
 | Kind | Fields |
 |---|---|
@@ -147,11 +175,12 @@ second one.
 
 ## RSS
 
-Each search has a feed at `/rss/<search id>.xml`. Feed readers cannot sign in, so the token
-goes in the URL:
+Each search has a feed at `/rss/<search id>.xml`, so with the defaults:
 
 ```
-http://localhost:8000/rss/1.xml?key=<your web auth token>
+http://localhost:8000/rss/1.xml
 ```
 
-Anyone with that URL can read the feed, so treat it like a password.
+If `WEB_AUTH_TOKEN` is set, feed readers cannot sign in, so the token goes in the URL
+instead: `/rss/1.xml?key=<your token>`. Anyone with that URL can read the feed, so treat it
+like a password.

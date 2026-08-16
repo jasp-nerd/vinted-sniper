@@ -23,107 +23,44 @@ or so and tells you about listings that weren't there before. That's the whole i
 
 ## Quickstart
 
-Most people run this on their own computer, and that works fine. You need Docker, nothing
-else. One thing to know: alerts only arrive while the computer is on and awake. For alerts
-around the clock, [the self-hosting guide](docs/self-hosting.md) shows the same setup on a
-Raspberry Pi, a NAS or a cheap server.
+1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Linux: [Docker Engine](https://docs.docker.com/engine/install/)).
+2. Download [docker-compose.yml](https://raw.githubusercontent.com/jasp-nerd/vinted-sniper/main/docker-compose.yml) (right-click, "Save link as...") into a folder.
+3. Open a terminal in that folder and run `docker compose up -d`.
+4. Open **http://localhost:8000**. Paste a Discord webhook and a Vinted search URL, or build the search right there.
 
-1. **Install Docker Desktop.** Free download for [Windows or
-   Mac](https://www.docker.com/products/docker-desktop/); on Linux, install [Docker
-   Engine](https://docs.docker.com/engine/install/).
-2. **Download [docker-compose.yml](https://raw.githubusercontent.com/jasp-nerd/vinted-sniper/main/docker-compose.yml).**
-   Right-click that link, choose "Save link as...", and put the file in an empty folder.
-3. **Start it.** Open a terminal in that folder and run `docker compose up -d`. On Windows,
-   right-click inside the folder and choose "Open in Terminal". On a Mac, open Terminal,
-   type `cd ` with a space after it, drag the folder into the window, and press Enter.
-4. **Open http://localhost:8000** and give it two things:
-   - **Somewhere to send alerts.** Easiest is a Discord webhook: in your Discord server,
-     Settings → Integrations → Webhooks → New Webhook → Copy URL. Paste it in.
-   - **A search to watch.** Search on Vinted with the filters you want and copy the
-     address bar, or build the search right there in the dashboard.
-
-Done. It stays quiet about what's already listed and messages you when something new
-appears. There's no sign-in and no config file to edit: the dashboard listens on your own
-machine only. (Going to expose it to other machines? Set `VINTED_SNIPER_WEB_AUTH_TOKEN`
-first; it shows your webhook URLs. [docs/configuration.md](docs/configuration.md) has the
-details.)
-
-Comfortable in a terminal? Steps 2 and 3 are just:
+That's it. No sign-in, no config file. Terminal version of steps 2 and 3:
 
 ```bash
 curl -O https://raw.githubusercontent.com/jasp-nerd/vinted-sniper/main/docker-compose.yml
 docker compose up -d
 ```
 
-(On Windows PowerShell, write `curl.exe` instead of `curl`, because plain `curl` means
-something else there.)
-
-### Without Docker
-
-It's a normal Python app, if you'd rather run it directly. Needs Python 3.13+ and
-[uv](https://docs.astral.sh/uv/):
+No Docker? It's a normal Python app (3.13+, [uv](https://docs.astral.sh/uv/)):
 
 ```bash
 git clone https://github.com/jasp-nerd/vinted-sniper.git && cd vinted-sniper
-uv sync --extra web
-uv run vinted-sniper run
+uv sync --extra web && uv run vinted-sniper run
 ```
 
-Same dashboard, same address: http://localhost:8000.
+Alerts arrive while your computer is on and awake. For alerts around the clock, run it on a
+Raspberry Pi, NAS or cheap VPS: see [the self-hosting guide](docs/self-hosting.md).
 
-### If nothing arrives
+## Features
 
-One command checks whether Vinted is reachable from your machine at all:
+- **Filters on what you actually pay**, buyer protection included. Vinted's own price filter ignores it.
+- **Tells you when it stops working.** A watchdog spots a search going silent and fixes the session itself.
+- **No Vinted account, no login, no cookies.** Nothing for Vinted to restrict.
+- **Search builder in the dashboard**: Vinted's own categories, brand autocomplete and filters, with live counts.
+- **Quiet on the first run.** No opening flood of ninety-six old listings.
+- **Discord, Telegram, ntfy, RSS, or plain JSON webhooks**, with per-search routing.
+- **Every country site**: `vinted.fr`, `.de`, `.nl`, `.co.uk`, `.com`, and the rest.
 
-```bash
-docker compose exec vinted-sniper vinted-sniper check --url "https://www.vinted.fr/catalog?search_text=nike"
-```
-
-It does one real request and prints what came back. More in
-[docs/troubleshooting.md](docs/troubleshooting.md).
-
-## What it does that others don't
-
-**It filters on what you actually pay.** Vinted's own price filter uses the asking price, so
-a search capped at €30 will happily show you something that costs €33 once buyer protection
-is added. Set a maximum here and it applies to the total.
-
-**It tells you when it has stopped working.** Vinted occasionally keeps answering normally
-while quietly serving a catalog that never updates. From the outside that looks exactly like
-a quiet night. This watches for a search going silent while your other searches on the same
-site keep finding things, and when that happens it starts a fresh session and says so out
-loud. Every search shows its last successful check, its last error, and whether it looks
-stuck.
-
-**It doesn't touch your account.** No login, no password, no cookies from your browser. It
-reads public listings the way a logged-out visitor does. Vinted has been restricting accounts
-it suspects of automation — there is no account here for that to happen to. It also means it
-cannot buy anything for you, which is deliberate.
-
-**You can build the search without leaving the dashboard.** Pasting a URL works, but the
-dashboard can also compose one with you: Vinted's own category tree, brand autocomplete and
-filters, assembled into the URL for you.
-
-**It stays quiet on the first run.** A new search records what's already there without
-notifying you about ninety-six things you didn't ask about.
-
-## Where notifications go
-
-| Channel | Setup |
-|---|---|
-| Discord | Paste a webhook URL. Nothing to invite, nothing to host. |
-| Telegram | Create a bot with [@BotFather](https://t.me/BotFather), put its token in `.env`, then run `vinted-sniper pair-telegram` and tap the link it prints. It finds your chat id for you. |
-| ntfy | Pick a topic name, install the app. No account. |
-| Anything else | A plain JSON POST to a URL you choose — n8n, Home Assistant, a script. |
-
-Each search can go to its own set of destinations, so a Discord channel for one thing and
-your phone for another is normal.
-
-There is also an RSS feed per search if you'd rather pull than be pushed.
-
-### The same listing, as it arrives in each
+## Screenshots
 
 <div align="center">
+  <img src="docs/media/builder.png" width="820" alt="The search builder in the dashboard: site, search text and price fields, Vinted's category tree, brand autocomplete, and condition and colour checkboxes with live item counts">
+  <br><sub>The search builder</sub>
+  <br><br>
   <img src="docs/media/discord.png" width="820" alt="A Discord notification showing the title, the price with buyer protection included, size, brand, condition, seller and photo, with buttons to open the listing, message the seller, or buy">
   <br><sub><b>Discord</b> — one message per listing, batched into embeds when several land at once</sub>
   <br><br>
@@ -131,101 +68,15 @@ There is also an RSS feed per search if you'd rather pull than be pushed.
   <br><sub><b>Telegram</b> — photo as a preview, so the message keeps its buttons</sub>
 </div>
 
-## Getting the search URL
+## Docs
 
-Open Vinted, search for what you want, and set the filters — category, size, brand, price,
-condition. Once results are showing, copy the address bar. That URL is the input.
+- [Configuration](docs/configuration.md): every setting, the CLI, notification channels, and the dashboard password for remote access. Nothing is required to start.
+- [Self-hosting](docs/self-hosting.md): Raspberry Pi, NAS, VPS, updating, backups.
+- [Troubleshooting](docs/troubleshooting.md): nothing arrives, 403s, and the one-line test that shows whether your IP is blocked.
+- [Architecture](docs/architecture.md) and [REVIEW](docs/REVIEW.md): for working on the code.
 
-Or skip the copying: **Build a search instead** on the dashboard offers the same filters in
-place — drill into a category, type a couple of letters of a brand, tick a condition or a
-colour — and writes the URL for you, with a link to check the results on Vinted first.
-
-<div align="center">
-  <img src="docs/media/builder.png" width="820" alt="The search builder in the dashboard: site, search text and price fields, Vinted's category tree, brand autocomplete, and condition and colour checkboxes with live item counts">
-</div>
-
-Any country site works: `vinted.fr`, `.de`, `.nl`, `.co.uk`, `.com`, and the rest. The site
-you copied from is the site it watches, and the links you get back point there too.
-
-Tracking parameters are stripped, so pasting the same search twice is recognised as the same
-search rather than doubling your requests.
-
-## How fast is it, really
-
-Checks default to once a minute per search and won't go below ten seconds. That floor isn't
-caution for its own sake: Vinted's own API lags behind what people upload, sometimes by
-minutes, occasionally by much longer. Checking every two seconds finds nothing sooner and
-does get you blocked.
-
-Anyone promising you zero-delay Vinted alerts is selling something. Each notification shows
-both when Vinted says the listing appeared and when we found it, so you can see the
-difference yourself.
-
-## What breaks, and how often
-
-Vinted has no public API and no obligation to keep the private one working. Three things go
-wrong in practice:
-
-**403, blocked.** Usually the address you're connecting from rather than anything you did.
-Home connections are rarely affected; some cheap VPS ranges are. It backs off, starts a new
-session, and keeps going. If it persists, [the troubleshooting
-guide](docs/troubleshooting.md) has a one-line test that tells you whether it's your IP or
-the app.
-
-**The catalog freezes.** Covered above. The watchdog handles this.
-
-**Vinted changes something.** It happens a few times a year. A scheduled job runs one real
-request a week against the live site so breakage shows up here before it shows up for you.
-
-## Running it somewhere
-
-A machine at home is the best place for this: a Raspberry Pi, an old laptop, a NAS. It costs
-nothing, and home connections get challenged far less than datacenter ones. A €5 VPS also
-works fine. [The self-hosting guide](docs/self-hosting.md) covers both, and explains which
-free tiers to avoid and why.
-
-There is no hosted version, and that's on purpose. One server making everyone's requests
-would concentrate exactly the risk that makes this work well when it's spread across many
-ordinary connections.
-
-## Configuration
-
-Day to day, the dashboard *is* the configuration: searches, destinations, per-search price
-caps and banned keywords all live there. The same things work from the command line if you
-prefer it:
-
-```
-vinted-sniper watch <url>       add a search
-vinted-sniper searches          list them
-vinted-sniper status            how each one is doing
-vinted-sniper check --url <url> one-off test fetch
-vinted-sniper destination ...   add somewhere to send
-```
-
-Process-level settings (the Telegram bot token, check intervals, proxies, logging) are
-environment variables. None are required to start. They're documented in
-[`.env.example`](.env.example), which is ordered so the few you might actually want come
-first, and in full in [docs/configuration.md](docs/configuration.md).
-
-## Development
-
-```bash
-uv sync --all-extras
-uv run pytest
-uv run ruff check . && uv run mypy
-```
-
-`VINTED_SNIPER_FETCH_MODE=mock` replays recorded responses from disk, so you can work on it
-without touching Vinted at all. There's more in [docs/architecture.md](docs/architecture.md),
-and the standards changes are held to are in [docs/REVIEW.md](docs/REVIEW.md).
-
-## A note on the rules
-
-This isn't affiliated with Vinted. It reads public listing pages anonymously, at deliberately
-conservative rates, and stores what it finds on your own machine. Vinted's terms prohibit
-automated access; running this means accepting that risk yourself. It does not log into your
-account, does not buy or list anything, and does not build profiles of sellers.
-[docs/legal.md](docs/legal.md) says more, including what to keep in mind about other people's
-data.
+Not affiliated with Vinted. It reads public listings anonymously and never logs in, buys, or
+lists; Vinted's terms prohibit automated access, so running it is your own call. More in
+[docs/legal.md](docs/legal.md).
 
 MIT licensed. Contributions welcome — especially bug reports with logs attached.
