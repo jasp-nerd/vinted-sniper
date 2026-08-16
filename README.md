@@ -23,7 +23,7 @@ or so and tells you about listings that weren't there before. That's the whole i
 
 ## Quickstart
 
-You need Docker — and that's all. Never used it? [The self-hosting
+You need Docker, and that's all. Never used it? [The self-hosting
 guide](docs/self-hosting.md) starts from zero, including installing Docker on a Raspberry Pi
 or an old laptop. Two commands:
 
@@ -32,8 +32,8 @@ curl -O https://raw.githubusercontent.com/jasp-nerd/vinted-sniper/main/docker-co
 docker compose up -d
 ```
 
-(On Windows PowerShell, write `curl.exe` instead of `curl` — plain `curl` means something
-else there.)
+(On Windows PowerShell, write `curl.exe` instead of `curl`, because plain `curl` means
+something else there.)
 
 Now open **http://localhost:8000** and give it two things:
 
@@ -43,7 +43,7 @@ Now open **http://localhost:8000** and give it two things:
    bar. Paste that in too.
 
 Done. It stays quiet about what's already listed and messages you when something new
-appears. There's no sign-in and no config file to edit — the dashboard listens on your own
+appears. There's no sign-in and no config file to edit: the dashboard listens on your own
 machine only. (Going to expose it to other machines? Set `VINTED_SNIPER_WEB_AUTH_TOKEN`
 first; it shows your webhook URLs. [docs/configuration.md](docs/configuration.md) has the
 details.)
@@ -185,7 +185,7 @@ vinted-sniper check --url <url> one-off test fetch
 vinted-sniper destination ...   add somewhere to send
 ```
 
-Process-level settings — the Telegram bot token, check intervals, proxies, logging — are
+Process-level settings (the Telegram bot token, check intervals, proxies, logging) are
 environment variables. None are required to start. They're documented in
 [`.env.example`](.env.example), which is ordered so the few you might actually want come
 first, and in full in [docs/configuration.md](docs/configuration.md).

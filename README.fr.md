@@ -26,7 +26,7 @@ C'est tout.
 
 ## Démarrage rapide
 
-Il vous faut Docker — et rien d'autre. Jamais utilisé ? [Le guide
+Il vous faut Docker, et rien d'autre. Jamais utilisé ? [Le guide
 d'hébergement](docs/self-hosting.md) part de zéro, installation de Docker comprise, sur un
 Raspberry Pi ou un vieux portable. Deux commandes :
 
@@ -35,7 +35,7 @@ curl -O https://raw.githubusercontent.com/jasp-nerd/vinted-sniper/main/docker-co
 docker compose up -d
 ```
 
-(Sous Windows PowerShell, écrivez `curl.exe` au lieu de `curl` — `curl` y désigne autre
+(Sous Windows PowerShell, écrivez `curl.exe` au lieu de `curl`, car `curl` y désigne autre
 chose.)
 
 Ouvrez ensuite **http://localhost:8000** et donnez-lui deux choses :
@@ -48,7 +48,7 @@ Ouvrez ensuite **http://localhost:8000** et donnez-lui deux choses :
 C'est terminé. L'outil reste silencieux sur ce qui est déjà en ligne et vous écrit quand
 quelque chose de nouveau apparaît. Pas de connexion, pas de fichier à éditer : le tableau de
 bord n'écoute que sur votre propre machine. (Vous comptez l'exposer à d'autres machines ?
-Définissez d'abord `VINTED_SNIPER_WEB_AUTH_TOKEN` — il affiche vos URL de webhook.
+Définissez d'abord `VINTED_SNIPER_WEB_AUTH_TOKEN`, car il affiche vos URL de webhook.
 [docs/configuration.md](docs/configuration.md) donne les détails.)
 
 ### Sans Docker
@@ -192,8 +192,8 @@ vinted-sniper check --url <url> test ponctuel
 vinted-sniper destination ...   ajouter une destination
 ```
 
-Les réglages du processus — jeton du bot Telegram, fréquence des vérifications, proxies,
-journalisation — sont des variables d'environnement. Aucune n'est nécessaire pour démarrer.
+Les réglages du processus (jeton du bot Telegram, fréquence des vérifications, proxies,
+journalisation) sont des variables d'environnement. Aucune n'est nécessaire pour démarrer.
 Elles sont documentées dans [`.env.example`](.env.example), ordonné pour que les rares
 réglages utiles arrivent en premier, et en détail dans
 [docs/configuration.md](docs/configuration.md).
