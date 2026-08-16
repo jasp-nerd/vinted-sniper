@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
-import time
 from typing import Any
 
 import httpx
@@ -226,7 +225,3 @@ class Dispatcher:
             await self._drop_sender(destination_id)
         if self._owns_client:
             await self._client.aclose()
-
-
-def seconds_since(timestamp: int | None) -> float | None:
-    return None if timestamp is None else time.time() - timestamp

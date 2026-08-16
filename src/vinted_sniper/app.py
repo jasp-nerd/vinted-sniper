@@ -41,8 +41,11 @@ HOUSEKEEPING_INTERVAL_S = 3600.0
 class Application:
     """The whole running system."""
 
-    def __init__(self, settings: Settings) -> None:
+    def __init__(
+        self, settings: Settings, *, supervise_interval_s: float = SUPERVISE_INTERVAL_S
+    ) -> None:
         self._settings = settings
+        self._supervise_interval_s = supervise_interval_s
         self._stop = asyncio.Event()
         self._work_available = asyncio.Event()
         self._poller_tasks: dict[int, asyncio.Task[None]] = {}
@@ -128,7 +131,7 @@ class Application:
                 log.exception("supervisor.failed", error=str(exc))
 
             with contextlib.suppress(TimeoutError):
-                await asyncio.wait_for(self._stop.wait(), timeout=SUPERVISE_INTERVAL_S)
+                await asyncio.wait_for(self._stop.wait(), timeout=self._supervise_interval_s)
 
         for task in self._poller_tasks.values():
             task.cancel()

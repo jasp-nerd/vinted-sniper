@@ -27,7 +27,8 @@ dependencies = [
 # TLS impersonation, only needed if plain httpx starts getting blocked.
 # Kept optional because curl_cffi ships compiled wheels that complicate ARM installs.
 impersonate = ["curl_cffi>=0.7"]
-web = ["fastapi>=0.115", "uvicorn[standard]>=0.34", "jinja2>=3.1"]
+# python-multipart is what lets FastAPI read the dashboard's form posts.
+web = ["fastapi>=0.115", "uvicorn[standard]>=0.34", "jinja2>=3.1", "python-multipart>=0.0.20"]
 
 [project.scripts]
 vinted-sniper = "vinted_sniper.cli:main"
@@ -45,6 +46,7 @@ dev = [
     "mypy>=1.14",
     "deptry>=0.21",
     "vulture>=2.14",
+    "httpx2>=2.10.0",
 ]
 
 [build-system]
@@ -121,8 +123,10 @@ known_first_party = ["vinted_sniper"]
 
 [tool.deptry.per_rule_ignores]
 # Optional extras are imported lazily behind config flags.
-DEP002 = ["curl_cffi", "fastapi", "uvicorn", "jinja2"]
+DEP002 = ["curl_cffi", "fastapi", "uvicorn", "jinja2", "python-multipart"]
 
 [tool.vulture]
 min_confidence = 80
 paths = ["src"]
+# Required by the context-manager protocol whether or not we look at them.
+ignore_names = ["exc_type", "exc", "tb"]

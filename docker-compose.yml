@@ -1,0 +1,30 @@
+services:
+  vinted-sniper:
+    image: ghcr.io/jasp/vinted-sniper:latest
+    # To run your own build instead of the published image, comment out `image:` above
+    # and uncomment this:
+    # build: .
+    container_name: vinted-sniper
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - vinted-sniper-data:/data
+    ports:
+      # Bound to localhost. Only widen this if you have a reverse proxy in front, and
+      # remember the dashboard holds your webhook URLs.
+      - "127.0.0.1:8000:8000"
+    # Nothing in here writes outside /data, so the rest of the filesystem can stay
+    # read-only.
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  vinted-sniper-data:

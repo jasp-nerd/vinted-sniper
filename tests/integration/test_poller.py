@@ -106,6 +106,39 @@ async def test_first_check_records_without_announcing(
     assert not work.is_set()
 
 
+async def test_first_check_in_newest_mode_announces_exactly_one(
+    transport: ScriptedTransport,
+    repo: Repo,
+    settings: Settings,
+    db: Any,
+    make_item: Callable[..., dict[str, Any]],
+) -> None:
+    """A regression guard.
+
+    The whole page has to be recorded so none of it is ever mistaken for new, but only one
+    listing may be announced. Queueing a notification per recorded listing is exactly the
+    opening flood this mode exists to avoid, and it is an easy mistake to make because the
+    two lists differ only here.
+    """
+    poller, _ = await make_poller(
+        transport, repo, settings.model_copy(update={"first_run_mode": "newest"}), db=db
+    )
+    destination_id = await repo.add_destination(kind="webhook", name="test", config={"url": "x"})
+    await repo.route(poller.query.id, destination_id)
+
+    now = int(time.time())
+    # Includes listings far outside the freshness window, as a real first page does.
+    transport.queue_catalog([make_item(i, photo_ts=now - i * 3600) for i in range(1, 31)])
+
+    await poller.tick()
+
+    assert await repo.outbox_depth() == 1
+    assert len(await repo.known_item_ids(list(range(1, 31)))) == 30
+
+    queued = await repo.claim_batch(destination_id, 50)
+    assert [n.item.item_id for n in queued] == [1], "the newest listing, and only that"
+
+
 async def test_only_listings_newer_than_the_last_check_are_announced(
     transport: ScriptedTransport,
     repo: Repo,

@@ -135,11 +135,9 @@ class Poller:
                 self.query,
                 selection.to_record,
                 destination_ids,
-                notify=bool(selection.to_notify),
+                notify=selection.to_notify,
                 keep_raw=self._settings.keep_raw_json,
             )
-            # Only the listings we mean to announce were queued above; when a first check
-            # seeds silently, notify=False keeps the outbox empty.
             if selection.to_notify and self._work_available is not None:
                 self._work_available.set()
 

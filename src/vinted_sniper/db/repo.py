@@ -359,16 +359,23 @@ class Repo:
         items: list[Item],
         destination_ids: list[int],
         *,
-        notify: bool = True,
+        notify: list[Item] | None = None,
         keep_raw: bool = False,
     ) -> int:
         """Store listings and queue their notifications in one transaction.
 
         Doing both at once is what makes a crash safe: either a listing is recorded and its
         notifications are queued, or neither happened and the next check finds it again.
+
+        `notify` is the subset worth telling someone about, which is not always everything
+        being recorded: a search's first check records the whole page so those listings are
+        never mistaken for new, while announcing at most one of them. Passing None means
+        every recorded listing is announced.
         """
         if not items:
             return 0
+
+        to_announce = items if notify is None else notify
 
         now = int(time.time())
         async with self._db.transaction() as conn:
@@ -401,13 +408,13 @@ class Repo:
                 ],
             )
 
-            if notify and destination_ids:
+            if to_announce and destination_ids:
                 await conn.executemany(
                     "INSERT OR IGNORE INTO outbox (item_id, query_id, destination_id, "
                     "next_attempt_at, created_at) VALUES (?, ?, ?, ?, ?)",
                     [
                         (item.item_id, query.id, destination_id, now, now)
-                        for item in items
+                        for item in to_announce
                         for destination_id in destination_ids
                     ],
                 )
