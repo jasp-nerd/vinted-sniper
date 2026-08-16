@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}vinted-sniper{% endblock %}
+
+{% block header_extra %}
+  <span class="status">
+    {% if snapshot.alive %}running{% else %}not responding{% endif %}
+    · {{ snapshot.queued_notifications }} queued
+  </span>
+  <form method="post" action="/logout" class="inline">
+    <button class="quiet" type="submit">Sign out</button>
+  </form>
+{% endblock %}
+
+{% block content %}
+{% if request.query_params.get('error') %}
+  <p class="error">{{ request.query_params.get('error') }}</p>
+{% endif %}
+
+<section>
+  <h2>Searches</h2>
+  {% if not snapshot.searches %}
+    <div class="card muted">
+      Nothing being watched yet. Add a search below: open Vinted, set up the search you
+      want, and copy the address bar once results are showing.
+    </div>
+  {% else %}
+  <div class="card">
+    <table>
+      <tr>
+        <th>Search</th><th>Site</th><th>State</th>
+        <th>Last checked</th><th>Newest listing</th><th>Found</th><th></th>
+      </tr>
+      {% for search in snapshot.searches %}
+      <tr>
+        <td>
+          {{ search.name }}
+          {% if search.last_error %}
+            <div class="muted">{{ search.last_error[:110] }}</div>
+          {% endif %}
+        </td>
+        <td class="muted">vinted.{{ search.tld }}</td>
+        <td><span class="pill {{ search.state }}">{{ search.state }}</span></td>
+        <td class="muted">
+          {% if search.last_success_at %}{{ now - search.last_success_at }}s ago
+          {% else %}never{% endif %}
+        </td>
+        <td class="muted">
+          {% if search.newest_listing_at %}{{ now - search.newest_listing_at }}s ago
+          {% else %}—{% endif %}
+        </td>
+        <td class="muted">{{ search.items_total }}</td>
+        <td>
+          <form method="post" action="/searches/{{ search.query_id }}/pause" class="inline">
+            <input type="hidden" name="paused" value="{{ '0' if search.paused else '1' }}">
+            <button class="quiet" type="submit">{{ 'Resume' if search.paused else 'Pause' }}</button>
+          </form>
+          <form method="post" action="/searches/{{ search.query_id }}/delete" class="inline">
+            <button class="quiet" type="submit">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+    <p class="muted" style="margin-bottom:0">
+      “stale” means this search has stopped seeing new listings while others on the same
+      site keep finding them — usually a session that needs replacing, which happens
+      automatically.
+    </p>
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <form method="post" action="/searches">
+      <label for="url">Vinted search URL</label>
+      <input type="url" id="url" name="url" required
+             placeholder="https://www.vinted.fr/catalog?search_text=...">
+      <div class="grid" style="margin-top:.75rem">
+        <div>
+          <label for="name">Name (optional)</label>
+          <input type="text" id="name" name="name">
+        </div>
+        <div>
+          <label for="interval">Check every (seconds)</label>
+          <input type="text" id="interval" name="interval"
+                 value="{{ default_interval }}" inputmode="numeric">
+        </div>
+        <div>
+          <label for="max_total_price">Max total price</label>
+          <input type="text" id="max_total_price" name="max_total_price"
+                 placeholder="incl. buyer protection">
+        </div>
+        <div>
+          <label for="banned_keywords">Exclude words</label>
+          <input type="text" id="banned_keywords" name="banned_keywords"
+                 placeholder="fake, replica">
+        </div>
+      </div>
+      {% if destinations %}
+      <div style="margin-top:.75rem">
+        <label>Send to</label>
+        <div class="row">
+          {% for destination in destinations if destination.active %}
+          <label class="row" style="margin:0">
+            <input type="checkbox" name="destination_ids" value="{{ destination.id }}" checked>
+            {{ destination.name }}
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      <p class="muted">
+        Anything below {{ min_interval }} seconds is ignored — Vinted's own catalog lags
+        further behind than that, so checking faster finds nothing sooner.
+      </p>
+      <button type="submit">Watch this search</button>
+    </form>
+  </div>
+</section>
+
+<section>
+  <h2>Destinations</h2>
+  {% if destinations %}
+  <div class="card">
+    <table>
+      <tr><th>Name</th><th>Type</th><th>State</th><th></th></tr>
+      {% for destination in destinations %}
+      <tr>
+        <td>{{ destination.name }}</td>
+        <td class="muted">{{ destination.kind }}</td>
+        <td>
+          {% if destination.active %}<span class="pill ok">active</span>
+          {% else %}<span class="pill failing">disabled</span>{% endif %}
+        </td>
+        <td>
+          {% if destination.active %}
+          <form method="post" action="/destinations/{{ destination.id }}/delete" class="inline">
+            <button class="quiet" type="submit">Remove</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <form method="post" action="/destinations">
+      <div class="grid">
+        <div>
+          <label for="kind">Type</label>
+          <select id="kind" name="kind">
+            <option value="discord">Discord webhook</option>
+            <option value="telegram">Telegram chat</option>
+            <option value="ntfy">ntfy topic</option>
+            <option value="webhook">Plain webhook</option>
+          </select>
+        </div>
+        <div>
+          <label for="dest_name">Name</label>
+          <input type="text" id="dest_name" name="name" placeholder="my server">
+        </div>
+        <div style="grid-column: 1 / -1">
+          <label for="target">Webhook URL, chat id, or topic</label>
+          <input type="text" id="target" name="target" required>
+        </div>
+      </div>
+      <p class="muted">
+        For Discord: server settings → Integrations → Webhooks → copy the URL. For Telegram,
+        <code>vinted-sniper pair-telegram</code> gives you a link that sets this up for you.
+      </p>
+      <button type="submit">Add destination</button>
+    </form>
+  </div>
+</section>
+
+<section>
+  <h2>Recently found</h2>
+  <div class="card">
+    {% if not recent %}
+      <p class="muted" style="margin:0">Nothing yet.</p>
+    {% else %}
+    <table>
+      <tr><th>Listing</th><th>Price</th><th>Search</th><th>Seen</th></tr>
+      {% for row in recent %}
+      <tr>
+        <td><a href="{{ row['url'] }}" target="_blank" rel="noreferrer">{{ row['title'] }}</a></td>
+        <td>{{ row['total_price'] or row['price'] }} {{ row['currency'] or '' }}</td>
+        <td class="muted">{{ row['query_name'] or '—' }}</td>
+        <td class="muted">{{ now - row['first_seen_at'] }}s ago</td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

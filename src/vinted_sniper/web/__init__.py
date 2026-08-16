@@ -1,0 +1,1 @@
+"""The optional web dashboard."""

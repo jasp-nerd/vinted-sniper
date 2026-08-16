@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}vinted-sniper{% endblock %}</title>
+  <style>
+    :root {
+      --bg: #fbfbfa; --panel: #fff; --ink: #1a1a1a; --muted: #6b6b6b;
+      --line: #e4e4e1; --accent: #09b1ba; --ok: #2e7d32; --warn: #b26a00; --bad: #c62828;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #17181a; --panel: #1f2023; --ink: #ececea; --muted: #9a9a97;
+        --line: #313337; --accent: #35c9d1; --ok: #7dc47f; --warn: #e2a44a; --bad: #ef7b7b;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--ink);
+      font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    header {
+      display: flex; align-items: baseline; gap: 1rem; padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--line); background: var(--panel);
+    }
+    header h1 { font-size: 1.05rem; margin: 0; letter-spacing: -0.01em; }
+    header .status { margin-left: auto; font-size: .85rem; color: var(--muted); }
+    main { max-width: 60rem; margin: 0 auto; padding: 1.5rem; }
+    section { margin-bottom: 2.25rem; }
+    h2 { font-size: .95rem; text-transform: uppercase; letter-spacing: .06em;
+         color: var(--muted); margin: 0 0 .75rem; }
+    .card { background: var(--panel); border: 1px solid var(--line);
+            border-radius: 10px; padding: 1rem 1.15rem; margin-bottom: .75rem; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: .5rem .6rem; border-bottom: 1px solid var(--line); }
+    th { font-weight: 600; font-size: .8rem; color: var(--muted); }
+    .pill { display: inline-block; padding: .1rem .55rem; border-radius: 999px;
+            font-size: .75rem; font-weight: 600; }
+    .pill.ok { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
+    .pill.stale, .pill.starting, .pill.paused {
+      background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
+    .pill.failing { background: color-mix(in srgb, var(--bad) 18%, transparent); color: var(--bad); }
+    form.inline { display: inline; }
+    label { display: block; font-size: .82rem; color: var(--muted); margin-bottom: .2rem; }
+    input, select, button {
+      font: inherit; padding: .45rem .6rem; border-radius: 7px;
+      border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+    }
+    input[type=text], input[type=url], input[type=password] { width: 100%; }
+    button { cursor: pointer; background: var(--accent); color: #06282a;
+             border-color: transparent; font-weight: 600; }
+    button.quiet { background: transparent; color: var(--muted); font-weight: 500; }
+    .grid { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); }
+    .error { border-left: 3px solid var(--bad); padding-left: .75rem; color: var(--bad); }
+    .muted { color: var(--muted); font-size: .85rem; }
+    .row { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>vinted-sniper</h1>
+    {% block header_extra %}{% endblock %}
+  </header>
+  <main>{% block content %}{% endblock %}</main>
+</body>
+</html>

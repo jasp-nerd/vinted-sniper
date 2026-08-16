@@ -86,7 +86,18 @@ class Database:
     # --- Writes (serialised) ----------------------------------------------------------
 
     async def execute(self, sql: str, params: Sequence[Any] = ()) -> int:
-        """Run one statement and commit. Returns lastrowid."""
+        """Run one statement and commit. Returns the number of rows it changed.
+
+        Use `insert` when you want the new row's id: SQLite reports a lastrowid for
+        updates and deletes too, and it is left over from some earlier insert.
+        """
+        async with self._write_lock:
+            cursor = await self._live.execute(sql, params)
+            await self._live.commit()
+            return cursor.rowcount if cursor.rowcount != -1 else 0
+
+    async def insert(self, sql: str, params: Sequence[Any] = ()) -> int:
+        """Insert one row and return its id."""
         async with self._write_lock:
             cursor = await self._live.execute(sql, params)
             await self._live.commit()
