@@ -78,14 +78,14 @@ class VintedClient:
         except TransportError as exc:
             raise NetworkError(str(exc)) from exc
 
-        _raise_for_status(response, tld)
+        raise_for_status(response, tld)
         await self._sessions.note_request(session)
         await self._sessions.merge_cookies(session, response.cookies)
 
         return _parse_catalog(response, tld, keep_raw=self._keep_raw)
 
 
-def _raise_for_status(response: Response, tld: str) -> None:
+def raise_for_status(response: Response, tld: str) -> None:
     """Turn an HTTP status into the error type that says what to do about it."""
     status = response.status_code
 

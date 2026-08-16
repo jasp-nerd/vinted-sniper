@@ -6,6 +6,7 @@ it holds webhook URLs and chat ids — so "is it locked" is a correctness questi
 
 from __future__ import annotations
 
+import json
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -13,8 +14,13 @@ import pytest
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
+from tests.conftest import ScriptedTransport
 from vinted_sniper.config import Settings
+from vinted_sniper.db import Database
 from vinted_sniper.db.repo import Repo
+from vinted_sniper.vinted.session import SessionManager
+from vinted_sniper.vinted.taxonomy import Taxonomy
+from vinted_sniper.vinted.transport import Response
 from vinted_sniper.web.server import SESSION_COOKIE, create_app
 
 TOKEN = "test-token-please-ignore"
@@ -249,3 +255,122 @@ async def test_the_rss_feed_needs_the_token(signed_in: TestClient, repo: Repo) -
     response = signed_in.get(f"/rss/{query_id}.xml?key={TOKEN}")
     assert response.status_code == 200
     assert response.text.startswith("<?xml")
+
+
+# --- The advanced-search builder ------------------------------------------------------
+
+
+@pytest.fixture
+def builder_client(
+    web_settings: Settings, db: Database, repo: Repo, transport: ScriptedTransport
+) -> Iterator[TestClient]:
+    """A dashboard wired to a taxonomy service that talks to a scripted Vinted."""
+    taxonomy = Taxonomy(SessionManager(db, transport), repo)
+    with TestClient(create_app(web_settings, repo, taxonomy)) as test_client:
+        test_client.cookies.set(SESSION_COOKIE, TOKEN)
+        yield test_client
+
+
+def _page_with_tree() -> Response:
+    payload = {
+        "CSRF_TOKEN": "11112222-3333-4444",
+        "catalogTree": [{"id": 1904, "title": "Women", "catalogs": []}],
+    }
+    html = f"<script>self.__next_f.push([1,{json.dumps(json.dumps(payload))}])</script>"
+    return Response(status_code=200, text=html, headers={}, cookies={"access_token_web": "t"})
+
+
+def test_the_dashboard_offers_the_builder_when_the_service_is_wired(
+    builder_client: TestClient, signed_in: TestClient
+) -> None:
+    assert "Build a search instead" in builder_client.get("/").text
+    assert "Build a search instead" not in signed_in.get("/").text
+
+
+def test_the_filter_endpoints_need_a_login(client: TestClient) -> None:
+    for path in (
+        "/api/filters/fr/categories",
+        "/api/filters/fr/brands?q=nike",
+        "/api/filters/fr/facets/status",
+    ):
+        assert client.get(path).status_code == 401, path
+
+
+def test_without_the_service_the_builder_answers_503(signed_in: TestClient) -> None:
+    assert signed_in.get("/api/filters/fr/categories").status_code == 503
+
+
+def test_categories_come_back_as_a_tree(
+    builder_client: TestClient, transport: ScriptedTransport
+) -> None:
+    transport.queue_root(_page_with_tree())  # session bootstrap
+    transport.queue_root(_page_with_tree())  # the page that carries the tree
+
+    response = builder_client.get("/api/filters/fr/categories")
+
+    assert response.status_code == 200
+    assert response.json() == {"categories": [{"id": 1904, "title": "Women", "children": []}]}
+
+
+def test_an_unknown_site_is_refused_before_talking_to_vinted(
+    builder_client: TestClient, transport: ScriptedTransport
+) -> None:
+    assert builder_client.get("/api/filters/xx/categories").status_code == 404
+    assert transport.requests == []
+
+
+def test_a_short_brand_query_is_answered_locally(
+    builder_client: TestClient, transport: ScriptedTransport
+) -> None:
+    response = builder_client.get("/api/filters/fr/brands?q=n")
+
+    assert response.json() == {"brands": []}
+    assert transport.requests == []
+
+
+def test_brands_pass_through_with_ids_and_counts(
+    builder_client: TestClient, transport: ScriptedTransport
+) -> None:
+    transport.queue(
+        Response(
+            status_code=200,
+            text=json.dumps({"brands": [{"id": 53, "title": "Nike", "item_count": 9}]}),
+            headers={},
+            cookies={},
+        )
+    )
+
+    response = builder_client.get("/api/filters/fr/brands?q=nike")
+
+    assert response.json() == {"brands": [{"id": 53, "title": "Nike", "count": 9}]}
+
+
+def test_junk_in_catalog_ids_never_reaches_vinted(
+    builder_client: TestClient, transport: ScriptedTransport
+) -> None:
+    transport.queue_root(_page_with_tree())
+    transport.queue_root(_page_with_tree())
+    transport.queue(
+        Response(status_code=200, text=json.dumps({"options": []}), headers={}, cookies={})
+    )
+
+    builder_client.get("/api/filters/fr/brands?q=nike&catalog_ids=12,drop%20table,34")
+
+    assert transport.requests[-1]["params"]["catalog_ids"] == "12,34"
+
+
+def test_an_unknown_facet_is_a_404(builder_client: TestClient) -> None:
+    assert builder_client.get("/api/filters/fr/facets/shoe_smell").status_code == 404
+
+
+def test_a_refusal_from_vinted_surfaces_as_a_502_with_the_reason(
+    builder_client: TestClient, transport: ScriptedTransport
+) -> None:
+    transport.queue_root(_page_with_tree())
+    transport.queue_root(_page_with_tree())
+    transport.queue_status(403, "blocked")
+
+    response = builder_client.get("/api/filters/fr/facets/status")
+
+    assert response.status_code == 502
+    assert "error" in response.json()

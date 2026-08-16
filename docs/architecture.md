@@ -31,7 +31,10 @@ development. `session.py` gets an anonymous session cookie by loading the homepa
 browser would, stores it so a restart does not need a new handshake, and replaces it on a
 timer. `client.py` makes the one request this app makes and refuses to believe a 200 is a
 catalog until it has checked. `urls.py` turns a pasted address-bar URL into a canonical form
-plus API parameters.
+plus API parameters. `taxonomy.py` feeds the dashboard's search builder: it mines the
+category tree and CSRF token out of the search page's HTML (the JSON endpoints that used to
+serve the tree are gone), caches the tree in the database for a week, and passes brand
+autocomplete and filter options through live.
 
 **`engine/`** decides what to do with the results. `filters.py` applies your rules,
 `dedup.py` works out what is genuinely new, `poller.py` runs the loop and maps failures to

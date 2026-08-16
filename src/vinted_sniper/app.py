@@ -28,6 +28,7 @@ from vinted_sniper.log import get_logger
 from vinted_sniper.vinted.client import VintedClient
 from vinted_sniper.vinted.proxies import ProxyRotation
 from vinted_sniper.vinted.session import SessionManager
+from vinted_sniper.vinted.taxonomy import Taxonomy
 from vinted_sniper.vinted.transport import Transport, TransportPool, build_transport
 
 log = get_logger(__name__)
@@ -118,7 +119,8 @@ class Application:
                         if settings.telegram_bot_token is not None:
                             tg.create_task(self._run_telegram_bot(repo), name="telegram-bot")
                         if settings.web_enabled:
-                            tg.create_task(self._run_web(repo), name="web")
+                            taxonomy = Taxonomy(sessions, repo)
+                            tg.create_task(self._run_web(repo, taxonomy), name="web")
                 except* Exception as group:
                     for error in group.exceptions:
                         log.exception("app.task_failed", error=str(error))
@@ -232,7 +234,7 @@ class Application:
         except Exception as exc:
             log.exception("telegram_bot.failed", error=str(exc))
 
-    async def _run_web(self, repo: Repo) -> None:
+    async def _run_web(self, repo: Repo, taxonomy: Taxonomy) -> None:
         try:
             from vinted_sniper.web.server import serve  # noqa: PLC0415
         except ImportError:
@@ -245,7 +247,7 @@ class Application:
             return
 
         try:
-            await serve(self._settings, repo, self._stop)
+            await serve(self._settings, repo, self._stop, taxonomy)
         except Exception as exc:
             log.exception("web.failed", error=str(exc))
 

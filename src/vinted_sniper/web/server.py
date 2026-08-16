@@ -20,6 +20,7 @@ import asyncio
 import contextlib
 import secrets
 import time
+from collections import Counter
 from collections.abc import Iterator
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
@@ -37,6 +38,8 @@ from vinted_sniper.db.repo import Repo
 from vinted_sniper.engine import health
 from vinted_sniper.log import get_logger
 from vinted_sniper.vinted import urls
+from vinted_sniper.vinted.errors import VintedError
+from vinted_sniper.vinted.taxonomy import FACET_CODES, Taxonomy
 
 log = get_logger(__name__)
 
@@ -52,7 +55,7 @@ def _authorised(supplied: str | None, expected: SecretStr | None) -> bool:
     return secrets.compare_digest(supplied, expected.get_secret_value())
 
 
-def create_app(settings: Settings, repo: Repo) -> FastAPI:
+def create_app(settings: Settings, repo: Repo, taxonomy: Taxonomy | None = None) -> FastAPI:
     token = settings.web_auth_token  # None means no password: the dashboard just opens
 
     app = FastAPI(title="vinted-sniper", docs_url=None, redoc_url=None)
@@ -119,6 +122,7 @@ def create_app(settings: Settings, repo: Repo) -> FastAPI:
 
         snapshot = await health.snapshot(repo)
         destinations = await repo.list_destinations()
+        watched_tlds = [search.tld for search in snapshot.searches]
         return TEMPLATES.TemplateResponse(
             request,
             "dashboard.html",
@@ -130,6 +134,12 @@ def create_app(settings: Settings, repo: Repo) -> FastAPI:
                 "now": int(time.time()),
                 "min_interval": MIN_POLL_INTERVAL_S,
                 "default_interval": settings.poll_default_interval_s,
+                "builder_enabled": taxonomy is not None,
+                "known_tlds": sorted(urls.KNOWN_TLDS),
+                # Open the builder on the site the user already watches most.
+                "default_tld": (
+                    Counter(watched_tlds).most_common(1)[0][0] if watched_tlds else "fr"
+                ),
             },
         )
 
@@ -184,6 +194,56 @@ def create_app(settings: Settings, repo: Repo) -> FastAPI:
     async def delete_search(query_id: int, _: None = guard) -> Response:
         await repo.delete_query(query_id)
         return RedirectResponse("/", status_code=303)
+
+    # --- Filter data for the advanced search builder -------------------------------
+    # Thin JSON pass-throughs the dashboard's picker calls. The taxonomy service does
+    # the talking to Vinted; a missing service (bare create_app in tests, or the web UI
+    # run without the engine) answers 503 rather than pretending the picker can work.
+
+    def _taxonomy_or_503() -> Taxonomy:
+        if taxonomy is None:
+            raise HTTPException(status_code=503, detail="the search builder is not available")
+        return taxonomy
+
+    def _known_tld(tld: str) -> str:
+        if tld not in urls.KNOWN_TLDS:
+            raise HTTPException(status_code=404, detail=f"vinted.{tld} is not a known site")
+        return tld
+
+    @app.get("/api/filters/{tld}/categories")
+    async def filter_categories(tld: str, _: None = guard) -> JSONResponse:
+        service = _taxonomy_or_503()
+        try:
+            tree = await service.categories(_known_tld(tld))
+        except VintedError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=502)
+        return JSONResponse({"categories": tree})
+
+    @app.get("/api/filters/{tld}/brands")
+    async def filter_brands(
+        tld: str, q: str = "", catalog_ids: str = "", _: None = guard
+    ) -> JSONResponse:
+        service = _taxonomy_or_503()
+        if len(q.strip()) < 2:  # noqa: PLR2004 - an autocomplete needs two letters
+            return JSONResponse({"brands": []})
+        try:
+            brands = await service.brands(_known_tld(tld), q, _id_list(catalog_ids))
+        except VintedError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=502)
+        return JSONResponse({"brands": brands})
+
+    @app.get("/api/filters/{tld}/facets/{code}")
+    async def filter_facet(
+        tld: str, code: str, catalog_ids: str = "", _: None = guard
+    ) -> JSONResponse:
+        service = _taxonomy_or_503()
+        if code not in FACET_CODES:
+            raise HTTPException(status_code=404, detail=f"no filter called {code!r}")
+        try:
+            options = await service.facet_options(_known_tld(tld), code, _id_list(catalog_ids))
+        except VintedError as exc:
+            return JSONResponse({"error": str(exc)}, status_code=502)
+        return JSONResponse({"options": options})
 
     # --- Destinations --------------------------------------------------------------
 
@@ -256,6 +316,11 @@ def _redirect_with_error(message: str) -> RedirectResponse:
     return RedirectResponse(f"/?error={message}", status_code=303)
 
 
+def _id_list(raw: str) -> str:
+    """Reduce user input to a comma-separated list of numeric ids, dropping the rest."""
+    return ",".join(part.strip() for part in raw.split(",") if part.strip().isdigit())
+
+
 def _decimal_or_none(raw: str) -> Decimal | None:
     raw = raw.strip()
     if not raw:
@@ -308,11 +373,16 @@ class _QuietServer(uvicorn.Server):
         yield
 
 
-async def serve(settings: Settings, repo: Repo, stop: asyncio.Event) -> None:
+async def serve(
+    settings: Settings,
+    repo: Repo,
+    stop: asyncio.Event,
+    taxonomy: Taxonomy | None = None,
+) -> None:
     """Run the web UI until the app shuts down."""
 
     config = uvicorn.Config(
-        create_app(settings, repo),
+        create_app(settings, repo, taxonomy),
         host=settings.web_host,
         port=settings.web_port,
         log_config=None,
