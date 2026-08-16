@@ -26,11 +26,11 @@ or so and tells you about listings that weren't there before. That's the whole i
 <table>
   <tr>
     <td width="50%" valign="top" align="center">
-      <img src="docs/media/discord.png" alt="A Discord notification showing the title, the price with buyer protection included, size, brand, condition, seller and photo, with buttons to open the listing, message the seller, or buy">
+      <img src="docs/media/discord.png" width="100%" alt="A Discord notification showing the title, the price with buyer protection included, size, brand, condition, seller and photo, with buttons to open the listing, message the seller, or buy">
       <br><sub><b>Discord</b> — one message per listing, batched into embeds when several land at once</sub>
     </td>
     <td width="50%" valign="top" align="center">
-      <img src="docs/media/telegram.png" alt="The same kind of notification in Telegram: photo preview, price with buyer protection included, brand, size, condition, seller, and the same three buttons">
+      <img src="docs/media/telegram.png" width="100%" alt="The same kind of notification in Telegram: photo preview, price with buyer protection included, brand, size, condition, seller, and the same three buttons">
       <br><sub><b>Telegram</b> — photo as a preview, so the message keeps its buttons</sub>
     </td>
   </tr>

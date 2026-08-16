@@ -29,11 +29,11 @@ C'est tout.
 <table>
   <tr>
     <td width="50%" valign="top" align="center">
-      <img src="docs/media/discord.png" alt="Une notification Discord : titre, prix protection acheteurs comprise, taille, marque, état, vendeur et photo, avec les boutons pour ouvrir l'annonce, contacter le vendeur ou acheter">
+      <img src="docs/media/discord.png" width="100%" alt="Une notification Discord : titre, prix protection acheteurs comprise, taille, marque, état, vendeur et photo, avec les boutons pour ouvrir l'annonce, contacter le vendeur ou acheter">
       <br><sub><b>Discord</b> — un message par annonce, regroupés en encarts quand plusieurs arrivent d'un coup</sub>
     </td>
     <td width="50%" valign="top" align="center">
-      <img src="docs/media/telegram.png" alt="La même notification dans Telegram : aperçu photo, prix protection acheteurs comprise, marque, taille, état, vendeur et les trois mêmes boutons">
+      <img src="docs/media/telegram.png" width="100%" alt="La même notification dans Telegram : aperçu photo, prix protection acheteurs comprise, marque, taille, état, vendeur et les trois mêmes boutons">
       <br><sub><b>Telegram</b> — la photo en aperçu, pour que le message garde ses boutons</sub>
     </td>
   </tr>
