@@ -24,20 +24,56 @@ C'est tout.
   <img src="docs/media/demo.gif" width="820" alt="Ajout d'une recherche en collant une URL Vinted, l'état de chaque recherche, et les annonces qui arrivent dans Discord et Telegram">
 </div>
 
-### La même annonce, telle qu'elle arrive dans chacun
+## Démarrage rapide
 
-<table>
-  <tr>
-    <td width="50%" valign="top" align="center">
-      <img src="docs/media/discord.png" width="100%" alt="Une notification Discord : titre, prix protection acheteurs comprise, taille, marque, état, vendeur et photo, avec les boutons pour ouvrir l'annonce, contacter le vendeur ou acheter">
-      <br><sub><b>Discord</b> — un message par annonce, regroupés en encarts quand plusieurs arrivent d'un coup</sub>
-    </td>
-    <td width="50%" valign="top" align="center">
-      <img src="docs/media/telegram.png" width="100%" alt="La même notification dans Telegram : aperçu photo, prix protection acheteurs comprise, marque, taille, état, vendeur et les trois mêmes boutons">
-      <br><sub><b>Telegram</b> — la photo en aperçu, pour que le message garde ses boutons</sub>
-    </td>
-  </tr>
-</table>
+Il vous faut Docker — et rien d'autre. Jamais utilisé ? [Le guide
+d'hébergement](docs/self-hosting.md) part de zéro, installation de Docker comprise, sur un
+Raspberry Pi ou un vieux portable. Deux commandes :
+
+```bash
+curl -O https://raw.githubusercontent.com/jasp-nerd/vinted-sniper/main/docker-compose.yml
+docker compose up -d
+```
+
+(Sous Windows PowerShell, écrivez `curl.exe` au lieu de `curl` — `curl` y désigne autre
+chose.)
+
+Ouvrez ensuite **http://localhost:8000** et donnez-lui deux choses :
+
+1. **Où envoyer les alertes.** Le plus simple est un webhook Discord : dans votre serveur,
+   Paramètres → Intégrations → Webhooks → Nouveau webhook → Copier l'URL. Collez-la.
+2. **Une recherche à surveiller.** Cherchez sur Vinted avec les filtres qui vous vont, puis
+   copiez la barre d'adresse. Collez-la aussi.
+
+C'est terminé. L'outil reste silencieux sur ce qui est déjà en ligne et vous écrit quand
+quelque chose de nouveau apparaît. Pas de connexion, pas de fichier à éditer : le tableau de
+bord n'écoute que sur votre propre machine. (Vous comptez l'exposer à d'autres machines ?
+Définissez d'abord `VINTED_SNIPER_WEB_AUTH_TOKEN` — il affiche vos URL de webhook.
+[docs/configuration.md](docs/configuration.md) donne les détails.)
+
+### Sans Docker
+
+C'est une application Python ordinaire, si vous préférez la lancer directement. Il faut
+Python 3.13+ et [uv](https://docs.astral.sh/uv/) :
+
+```bash
+git clone https://github.com/jasp-nerd/vinted-sniper.git && cd vinted-sniper
+uv sync --extra web
+uv run vinted-sniper run
+```
+
+Même tableau de bord, même adresse : http://localhost:8000.
+
+### Si rien n'arrive
+
+Une commande vérifie que Vinted répond depuis votre machine :
+
+```bash
+docker compose exec vinted-sniper vinted-sniper check --url "https://www.vinted.fr/catalog?search_text=nike"
+```
+
+Elle fait une vraie requête et affiche le résultat. Plus de pistes dans
+[docs/troubleshooting.md](docs/troubleshooting.md).
 
 ## Ce qui change par rapport aux autres
 
@@ -61,47 +97,34 @@ volontaire.
 **Il reste silencieux au premier passage.** Une nouvelle recherche enregistre ce qui existe
 déjà sans vous notifier quatre-vingt-seize articles que vous n'avez pas demandés.
 
-## Démarrage rapide
+## Où arrivent les notifications
 
-Il vous faut Docker. Trois commandes :
+| Canal | Mise en place |
+|---|---|
+| Discord | Collez une URL de webhook. Rien à inviter, rien à héberger. |
+| Telegram | Créez un bot avec [@BotFather](https://t.me/BotFather), mettez son jeton dans `.env`, puis lancez `vinted-sniper pair-telegram` et touchez le lien affiché. L'identifiant de conversation est trouvé pour vous. |
+| ntfy | Choisissez un nom de sujet, installez l'application. Sans compte. |
+| Autre chose | Un simple POST JSON vers l'URL de votre choix — n8n, Home Assistant, un script. |
 
-```bash
-curl -O https://raw.githubusercontent.com/jasp-nerd/vinted-sniper/main/docker-compose.yml
-curl -o .env https://raw.githubusercontent.com/jasp-nerd/vinted-sniper/main/.env.example
-docker compose up -d
-```
+Chaque recherche peut viser ses propres destinations : un salon Discord pour l'une, votre
+téléphone pour l'autre.
 
-Sous Windows PowerShell, `curl` désigne autre chose ; utilisez plutôt :
+Un flux RSS par recherche est également disponible.
 
-```powershell
-curl.exe -O https://raw.githubusercontent.com/jasp-nerd/vinted-sniper/main/docker-compose.yml
-curl.exe -o .env https://raw.githubusercontent.com/jasp-nerd/vinted-sniper/main/.env.example
-docker compose up -d
-```
+### La même annonce, telle qu'elle arrive dans chacun
 
-Avant de démarrer, ouvrez `.env` et indiquez au moins un moyen de vous joindre. Le plus rapide
-est un webhook Discord : dans votre serveur, Paramètres → Intégrations → Webhooks → Nouveau
-webhook → Copier l'URL.
-
-Ajoutez ensuite le webhook et une recherche :
-
-```bash
-docker compose exec vinted-sniper vinted-sniper destination discord "https://discord.com/api/webhooks/..."
-docker compose exec vinted-sniper vinted-sniper watch "https://www.vinted.fr/catalog?search_text=nike+air+max&price_to=40"
-```
-
-Le tableau de bord tourne déjà sur http://localhost:8000. Il n'a pas de mot de passe, car il
-n'écoute que sur localhost : qui peut l'atteindre est déjà sur la machine. Si vous l'exposez
-au-delà, définissez d'abord `VINTED_SNIPER_WEB_AUTH_TOKEN` dans `.env` (`openssl rand -hex 32`),
-puisqu'il affiche vos URL de webhook.
-
-Pour vérifier d'abord que Vinted répond depuis votre machine :
-
-```bash
-docker compose exec vinted-sniper vinted-sniper check --url "https://www.vinted.fr/catalog?search_text=nike"
-```
-
-Cette commande fait une vraie requête et affiche le résultat.
+<table>
+  <tr>
+    <td width="50%" valign="top" align="center">
+      <img src="docs/media/discord.png" width="100%" alt="Une notification Discord : titre, prix protection acheteurs comprise, taille, marque, état, vendeur et photo, avec les boutons pour ouvrir l'annonce, contacter le vendeur ou acheter">
+      <br><sub><b>Discord</b> — un message par annonce, regroupés en encarts quand plusieurs arrivent d'un coup</sub>
+    </td>
+    <td width="50%" valign="top" align="center">
+      <img src="docs/media/telegram.png" width="100%" alt="La même notification dans Telegram : aperçu photo, prix protection acheteurs comprise, marque, taille, état, vendeur et les trois mêmes boutons">
+      <br><sub><b>Telegram</b> — la photo en aperçu, pour que le message garde ses boutons</sub>
+    </td>
+  </tr>
+</table>
 
 ## Récupérer l'URL de recherche
 
@@ -115,20 +138,6 @@ vers lui.
 
 Les paramètres de suivi sont retirés : coller deux fois la même recherche est donc reconnu
 comme une seule recherche.
-
-## Où arrivent les notifications
-
-| Canal | Mise en place |
-|---|---|
-| Discord | Collez une URL de webhook. Rien à inviter, rien à héberger. |
-| Telegram | Créez un bot avec [@BotFather](https://t.me/BotFather), puis lancez `vinted-sniper pair-telegram` et touchez le lien affiché. L'identifiant de conversation est trouvé pour vous. |
-| ntfy | Choisissez un nom de sujet, installez l'application. Sans compte. |
-| Autre chose | Un simple POST JSON vers l'URL de votre choix — n8n, Home Assistant, un script. |
-
-Chaque recherche peut viser ses propres destinations : un salon Discord pour l'une, votre
-téléphone pour l'autre.
-
-Un flux RSS par recherche est également disponible.
 
 ## La vitesse, honnêtement
 
@@ -171,10 +180,9 @@ des connexions ordinaires.
 
 ## Configuration
 
-Tout passe par des variables d'environnement, documentées dans
-[`.env.example`](.env.example) et [docs/configuration.md](docs/configuration.md). Vos
-recherches et destinations sont dans la base de données, gérées via le tableau de bord ou la
-ligne de commande : aucun fichier de configuration à tenir à jour.
+Au quotidien, le tableau de bord *est* la configuration : recherches, destinations, plafonds
+de prix et mots interdits par recherche, tout se règle là. Les mêmes actions existent en ligne
+de commande si vous préférez :
 
 ```
 vinted-sniper watch <url>       ajouter une recherche
@@ -183,6 +191,12 @@ vinted-sniper status            leur état
 vinted-sniper check --url <url> test ponctuel
 vinted-sniper destination ...   ajouter une destination
 ```
+
+Les réglages du processus — jeton du bot Telegram, fréquence des vérifications, proxies,
+journalisation — sont des variables d'environnement. Aucune n'est nécessaire pour démarrer.
+Elles sont documentées dans [`.env.example`](.env.example), ordonné pour que les rares
+réglages utiles arrivent en premier, et en détail dans
+[docs/configuration.md](docs/configuration.md).
 
 ## Développement
 

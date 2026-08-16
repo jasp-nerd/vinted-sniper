@@ -29,9 +29,15 @@ Then:
 ```bash
 mkdir -p ~/vinted-sniper && cd ~/vinted-sniper
 curl -O https://raw.githubusercontent.com/jasp-nerd/vinted-sniper/main/docker-compose.yml
-curl -o .env https://raw.githubusercontent.com/jasp-nerd/vinted-sniper/main/.env.example
-nano .env          # set a web token if you want the dashboard
 docker compose up -d
+```
+
+The dashboard is now on `http://localhost:8000` *of that machine* — searches and webhooks
+are set up there, so no `.env` file is needed to start. Grab one only if you want Telegram
+or other tuning:
+
+```bash
+curl -o .env https://raw.githubusercontent.com/jasp-nerd/vinted-sniper/main/.env.example
 ```
 
 Images are published for both x86 and ARM, so the same commands work on a Pi.
@@ -75,15 +81,17 @@ curl -v -c - -L "https://www.vinted.fr/" 2>&1 | grep access_token_web
 No cookie printed means that address is already being challenged, and you should pick a
 different provider rather than fight it.
 
-If you enable the dashboard on a VPS, do not expose port 8000 to the internet directly. Keep
-the loopback binding in the compose file and reach it through an SSH tunnel:
+On a VPS, do not expose port 8000 to the internet directly — the dashboard has no password
+unless you set one. Keep the loopback binding in the compose file and reach it through an
+SSH tunnel:
 
 ```bash
 ssh -L 8000:localhost:8000 you@your-server
 ```
 
-Then open http://localhost:8000 on your own machine. Anything else needs a reverse proxy with
-TLS in front, because the dashboard can see your webhook URLs.
+Then open http://localhost:8000 on your own machine. Anything else needs
+`VINTED_SNIPER_WEB_AUTH_TOKEN` set *and* a reverse proxy with TLS in front, because the
+dashboard can see your webhook URLs.
 
 ## Free tiers worth avoiding
 
@@ -122,9 +130,11 @@ tag in `docker-compose.yml` and open an issue.
 ```bash
 git clone https://github.com/jasp-nerd/vinted-sniper && cd vinted-sniper
 uv sync --extra web
-cp .env.example .env
 uv run vinted-sniper run
 ```
+
+No `.env` needed here either — copy `.env.example` to `.env` later if you want Telegram or
+other tuning.
 
 For a systemd service, point `ExecStart` at `/path/to/.venv/bin/vinted-sniper run`, set
 `WorkingDirectory`, and add `Restart=always`. Note that the app handles SIGTERM itself, so

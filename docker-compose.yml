@@ -6,12 +6,17 @@ services:
     # build: .
     container_name: vinted-sniper
     restart: unless-stopped
-    env_file: .env
+    # Optional: everything runs on defaults without one. Grab .env.example if you want
+    # Telegram or any tuning.
+    env_file:
+      - path: .env
+        required: false
     volumes:
       - vinted-sniper-data:/data
     ports:
-      # Bound to localhost. Only widen this if you have a reverse proxy in front, and
-      # remember the dashboard holds your webhook URLs.
+      # The dashboard, reachable from this machine only. If you widen this beyond
+      # 127.0.0.1, set VINTED_SNIPER_WEB_AUTH_TOKEN first — the dashboard has no other
+      # lock, and it shows your webhook URLs.
       - "127.0.0.1:8000:8000"
     # Nothing in here writes outside /data, so the rest of the filesystem can stay
     # read-only.
