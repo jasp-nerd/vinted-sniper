@@ -1,6 +1,10 @@
 # Vinted changes its API without telling anyone, and the usual way a tool in this space
 # dies is quietly: it keeps running, stops finding anything, and nobody notices for weeks.
 # This makes one real request a week so that we hear about it before users do.
+#
+# Kept in its own workflow on purpose. Badges are per-workflow, so a blocked runner here
+# can never turn the CI badge red — and a red CI badge should only ever mean the code is
+# broken.
 name: Canary
 
 on:
@@ -8,25 +12,51 @@ on:
     - cron: "0 9 * * 1"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: canary
+  cancel-in-progress: false
+
 jobs:
   live-check:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      # Without this the canary can fail and then fail to tell anyone: opening an issue
+      # needs write, and the default token is read-only.
+      issues: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # No job here pushes, so the token has no reason to stay in .git/config.
+          persist-credentials: false
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           enable-cache: true
+          cache-dependency-glob: uv.lock
 
       - run: uv sync --locked
 
+      # A single runner address getting challenged is not the same as a broken API, so
+      # one refusal is not worth waking anyone up for. Three tries, spaced out.
       - name: Fetch one real search
-        id: check
-        run: uv run vinted-sniper check --url "https://www.vinted.com/catalog?search_text=nike"
+        run: |
+          for attempt in 1 2 3; do
+            if uv run vinted-sniper check --url "https://www.vinted.com/catalog?search_text=nike"; then
+              exit 0
+            fi
+            echo "::warning::attempt $attempt failed, retrying"
+            sleep $((attempt * 60))
+          done
+          exit 1
 
       - name: Open an issue if it broke
         if: failure()
-        uses: actions/github-script@v7
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const title = "Canary failed: the live check against Vinted did not work";
@@ -36,6 +66,8 @@ jobs:
               state: "open",
               labels: "canary",
             });
+            // One open issue at a time: a weekly job that files a duplicate every run is
+            // noise nobody reads.
             if (existing.data.some(issue => issue.title === title)) return;
             await github.rest.issues.create({
               owner: context.repo.owner,
@@ -43,12 +75,12 @@ jobs:
               title,
               labels: ["canary"],
               body: [
-                "The weekly live check failed. Either Vinted changed something, or this",
-                "runner's address is being challenged.",
+                "The weekly live check failed three times in a row. Either Vinted changed",
+                "something, or this runner's address is being challenged.",
                 "",
                 `Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
                 "",
-                "Worth checking before assuming the worst: a single blocked runner is not",
-                "the same as a broken API. Re-run it once before digging in.",
+                "Worth checking before assuming the worst: run the same command from your",
+                "own machine. If it works there, it was the runner's address.",
               ].join("\n"),
             });

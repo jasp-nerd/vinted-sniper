@@ -1,0 +1,31 @@
+# Pinning actions to commit SHAs is only safe if something keeps them current, otherwise
+# the pins quietly rot. Dependabot reads the trailing `# v7.0.1` comment and bumps both the
+# SHA and the comment together.
+#
+# Everything is grouped: one pull request a week per ecosystem beats a stream of them,
+# which is how update PRs end up ignored.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: uv
+    directory: "/"
+    schedule:
+      interval: weekly
+    # Skip the first week of a release, when problems tend to surface.
+    cooldown:
+      default-days: 7
+    groups:
+      python:
+        patterns: ["*"]
+
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: weekly

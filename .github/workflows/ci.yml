@@ -4,20 +4,66 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Lets a transient failure be re-run without an empty commit.
+  workflow_dispatch:
+
+# Least privilege. Nothing here writes anything back.
+permissions:
+  contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # head_ref is set on pull requests, ref on pushes: without it a PR from a branch
+  # called `main` shares a group with pushes to main and cancels them.
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  # Superseded pull request runs are worth cancelling; a run on main is not.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      # Without this, a failure on one version cancels the other and hides whether the
+      # problem is version-specific.
+      fail-fast: false
+      matrix:
+        # pyproject promises >=3.13, so both supported versions get tested.
+        python-version: ["3.13", "3.14"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # No job here pushes, so the token has no reason to stay in .git/config.
+          persist-credentials: false
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           enable-cache: true
+          cache-dependency-glob: uv.lock
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install
+        run: uv sync --locked --all-extras
+
+      - name: Tests
+        run: uv run coverage run -m pytest
+
+      - name: Coverage
+        run: uv run coverage report
+
+  # Linting is version-independent, so it runs once rather than once per interpreter.
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # No job here pushes, so the token has no reason to stay in .git/config.
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
 
       - name: Install
         run: uv sync --locked --all-extras
@@ -37,35 +83,54 @@ jobs:
       - name: Dead code
         run: uv run vulture
 
-      - name: Tests
-        run: uv run coverage run -m pytest
-
-      - name: Coverage
-        run: uv run coverage report
+      # Catches workflow mistakes such as a missing permissions block or a template
+      # injection, which is how the canary shipped unable to report its own failures.
+      - name: Audit workflows
+        run: uv run --with zizmor zizmor .github/workflows
 
   secrets:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          # No job here pushes, so the token has no reason to stay in .git/config.
+          persist-credentials: false
           fetch-depth: 0
 
-      # Scans the whole history rather than a commit range. The range-based action cannot
-      # diff the first push, because the root commit has no parent to compare against.
+      # A backstop behind GitHub's push protection, which blocks secrets before they are
+      # ever public. Scans the whole history rather than a commit range: the range-based
+      # action asks git for the root commit's parent, which does not exist, and fails the
+      # build on the first push even when it finds nothing. Image pinned by digest so a
+      # third-party tag cannot change what runs against a checkout.
       - name: Scan for secrets
         run: |
-          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:latest \
+          docker run --rm -v "$PWD:/repo" \
+            ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f \
             detect --source /repo --redact --no-banner --verbose
 
   docker:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # No job here pushes, so the token has no reason to stay in .git/config.
+          persist-credentials: false
+
+      - uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4.2.0
+      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+
+      # arm64 is built on main because the docs lead with a Raspberry Pi: an aarch64-only
+      # break should surface here rather than after it reaches the published image.
+      # Emulated builds are slow, so pull requests stay on amd64.
       - name: Build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: .
           push: false
+          platforms: linux/amd64${{ github.event_name == 'push' && ',linux/arm64' || '' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

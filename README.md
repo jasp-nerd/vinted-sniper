@@ -4,7 +4,7 @@
 
 <img src="docs/media/banner.svg" alt="vinted-sniper — get told the moment something matches" width="620">
 
-[![CI](https://github.com/jasp-nerd/vinted-sniper/actions/workflows/ci.yml/badge.svg)](https://github.com/jasp-nerd/vinted-sniper/actions/workflows/ci.yml)
+[![CI](https://github.com/jasp-nerd/vinted-sniper/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/jasp-nerd/vinted-sniper/actions/workflows/ci.yml)
 [![Container image](https://img.shields.io/badge/ghcr.io-vinted--sniper-2496ED?logo=docker&logoColor=white)](https://github.com/jasp-nerd/vinted-sniper/pkgs/container/vinted-sniper)
 [![Python 3.13+](https://img.shields.io/badge/python-3.13+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
