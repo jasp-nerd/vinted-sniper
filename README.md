@@ -2,7 +2,7 @@
 
 **English** · [Français](README.fr.md)
 
-<img src="docs/media/banner.svg" alt="vinted-sniper — get told the moment something matches" width="620">
+<img src="docs/media/banner.svg" alt="vinted-sniper — get told the moment something matches" width="820">
 
 [![CI](https://github.com/jasp-nerd/vinted-sniper/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/jasp-nerd/vinted-sniper/actions/workflows/ci.yml)
 [![Container image](https://img.shields.io/badge/ghcr.io-vinted--sniper-2496ED?logo=docker&logoColor=white)](https://github.com/jasp-nerd/vinted-sniper/pkgs/container/vinted-sniper)
@@ -90,6 +90,10 @@ reads public listings the way a logged-out visitor does. Vinted has been restric
 it suspects of automation — there is no account here for that to happen to. It also means it
 cannot buy anything for you, which is deliberate.
 
+**You can build the search without leaving the dashboard.** Pasting a URL works, but the
+dashboard can also compose one with you: Vinted's own category tree, brand autocomplete and
+filters, assembled into the URL for you.
+
 **It stays quiet on the first run.** A new search records what's already there without
 notifying you about ninety-six things you didn't ask about.
 
@@ -109,23 +113,26 @@ There is also an RSS feed per search if you'd rather pull than be pushed.
 
 ### The same listing, as it arrives in each
 
-<table>
-  <tr>
-    <td width="50%" valign="top" align="center">
-      <img src="docs/media/discord.png" width="100%" alt="A Discord notification showing the title, the price with buyer protection included, size, brand, condition, seller and photo, with buttons to open the listing, message the seller, or buy">
-      <br><sub><b>Discord</b> — one message per listing, batched into embeds when several land at once</sub>
-    </td>
-    <td width="50%" valign="top" align="center">
-      <img src="docs/media/telegram.png" width="100%" alt="The same kind of notification in Telegram: photo preview, price with buyer protection included, brand, size, condition, seller, and the same three buttons">
-      <br><sub><b>Telegram</b> — photo as a preview, so the message keeps its buttons</sub>
-    </td>
-  </tr>
-</table>
+<div align="center">
+  <img src="docs/media/discord.png" width="820" alt="A Discord notification showing the title, the price with buyer protection included, size, brand, condition, seller and photo, with buttons to open the listing, message the seller, or buy">
+  <br><sub><b>Discord</b> — one message per listing, batched into embeds when several land at once</sub>
+  <br><br>
+  <img src="docs/media/telegram.png" width="820" alt="The same kind of notification in Telegram: photo preview, price with buyer protection included, brand, size, condition, seller, and the same three buttons">
+  <br><sub><b>Telegram</b> — photo as a preview, so the message keeps its buttons</sub>
+</div>
 
 ## Getting the search URL
 
 Open Vinted, search for what you want, and set the filters — category, size, brand, price,
 condition. Once results are showing, copy the address bar. That URL is the input.
+
+Or skip the copying: **Build a search instead** on the dashboard offers the same filters in
+place — drill into a category, type a couple of letters of a brand, tick a condition or a
+colour — and writes the URL for you, with a link to check the results on Vinted first.
+
+<div align="center">
+  <img src="docs/media/builder.png" width="820" alt="The search builder in the dashboard: site, search text and price fields, Vinted's category tree, brand autocomplete, and condition and colour checkboxes with live item counts">
+</div>
 
 Any country site works: `vinted.fr`, `.de`, `.nl`, `.co.uk`, `.com`, and the rest. The site
 you copied from is the site it watches, and the links you get back point there too.

@@ -2,7 +2,7 @@
 
 [English](README.md) · **Français**
 
-<img src="docs/media/banner.svg" alt="vinted-sniper — être prévenu dès qu'une annonce correspond" width="620">
+<img src="docs/media/banner.svg" alt="vinted-sniper — être prévenu dès qu'une annonce correspond" width="820">
 
 [![CI](https://github.com/jasp-nerd/vinted-sniper/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/jasp-nerd/vinted-sniper/actions/workflows/ci.yml)
 [![Image du conteneur](https://img.shields.io/badge/ghcr.io-vinted--sniper-2496ED?logo=docker&logoColor=white)](https://github.com/jasp-nerd/vinted-sniper/pkgs/container/vinted-sniper)
@@ -94,6 +94,10 @@ connecté. Vinted restreint les comptes soupçonnés d'automatisation : ici, il 
 compte à restreindre. Cela veut aussi dire qu'il ne peut rien acheter à votre place, et c'est
 volontaire.
 
+**Vous pouvez construire la recherche sans quitter le tableau de bord.** Coller une URL
+fonctionne, mais le tableau de bord sait aussi la composer avec vous : l'arbre de catégories
+de Vinted, l'autocomplétion des marques et les mêmes filtres, assemblés en URL à votre place.
+
 **Il reste silencieux au premier passage.** Une nouvelle recherche enregistre ce qui existe
 déjà sans vous notifier quatre-vingt-seize articles que vous n'avez pas demandés.
 
@@ -113,24 +117,28 @@ Un flux RSS par recherche est également disponible.
 
 ### La même annonce, telle qu'elle arrive dans chacun
 
-<table>
-  <tr>
-    <td width="50%" valign="top" align="center">
-      <img src="docs/media/discord.png" width="100%" alt="Une notification Discord : titre, prix protection acheteurs comprise, taille, marque, état, vendeur et photo, avec les boutons pour ouvrir l'annonce, contacter le vendeur ou acheter">
-      <br><sub><b>Discord</b> — un message par annonce, regroupés en encarts quand plusieurs arrivent d'un coup</sub>
-    </td>
-    <td width="50%" valign="top" align="center">
-      <img src="docs/media/telegram.png" width="100%" alt="La même notification dans Telegram : aperçu photo, prix protection acheteurs comprise, marque, taille, état, vendeur et les trois mêmes boutons">
-      <br><sub><b>Telegram</b> — la photo en aperçu, pour que le message garde ses boutons</sub>
-    </td>
-  </tr>
-</table>
+<div align="center">
+  <img src="docs/media/discord.png" width="820" alt="Une notification Discord : titre, prix protection acheteurs comprise, taille, marque, état, vendeur et photo, avec les boutons pour ouvrir l'annonce, contacter le vendeur ou acheter">
+  <br><sub><b>Discord</b> — un message par annonce, regroupés en encarts quand plusieurs arrivent d'un coup</sub>
+  <br><br>
+  <img src="docs/media/telegram.png" width="820" alt="La même notification dans Telegram : aperçu photo, prix protection acheteurs comprise, marque, taille, état, vendeur et les trois mêmes boutons">
+  <br><sub><b>Telegram</b> — la photo en aperçu, pour que le message garde ses boutons</sub>
+</div>
 
 ## Récupérer l'URL de recherche
 
 Ouvrez Vinted, cherchez ce que vous voulez, réglez les filtres — catégorie, taille, marque,
 prix, état. Une fois les résultats affichés, copiez la barre d'adresse. C'est cette URL qu'il
 faut fournir.
+
+Ou évitez le copier-coller : **Build a search instead** dans le tableau de bord propose les
+mêmes filtres sur place — descendez dans une catégorie, tapez deux lettres d'une marque,
+cochez un état ou une couleur — et écrit l'URL pour vous, avec un lien pour vérifier d'abord
+les résultats sur Vinted.
+
+<div align="center">
+  <img src="docs/media/builder.png" width="820" alt="Le constructeur de recherche du tableau de bord : site, texte et prix, l'arbre de catégories de Vinted, l'autocomplétion des marques, et les cases état et couleur avec le nombre d'articles">
+</div>
 
 Tous les sites nationaux fonctionnent : `vinted.fr`, `.de`, `.nl`, `.co.uk`, `.com` et les
 autres. Le site que vous avez copié est celui qui sera surveillé, et les liens reçus pointent
