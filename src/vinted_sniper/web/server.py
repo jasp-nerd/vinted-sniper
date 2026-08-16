@@ -1,6 +1,6 @@
 """The web UI.
 
-Optional, off by default, and bound to localhost unless you say otherwise. It exists
+On by default, bound to localhost unless you say otherwise. It exists
 because editing a config file is where most people give up: pasting a Vinted URL into a box
 is not.
 
