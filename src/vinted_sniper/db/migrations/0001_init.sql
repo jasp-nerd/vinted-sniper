@@ -118,14 +118,6 @@ CREATE TABLE sessions (
     request_count INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE TABLE proxies (
-    proxy            TEXT    PRIMARY KEY,
-    state            TEXT    NOT NULL DEFAULT 'active'
-                     CHECK (state IN ('active', 'quarantined', 'dead')),
-    quarantine_until INTEGER,
-    fail_count       INTEGER NOT NULL DEFAULT 0
-);
-
 CREATE TABLE app_state (
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL

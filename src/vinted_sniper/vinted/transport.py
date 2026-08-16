@@ -8,7 +8,9 @@ fingerprint instead, and nothing else in the codebase has to know.
 
 from __future__ import annotations
 
+import contextlib
 import json
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from types import TracebackType
@@ -202,6 +204,47 @@ class MockTransport:
         return None
 
 
+def build_transport(
+    *,
+    impersonate: bool,
+    timeout: float,
+    proxy: str | None = None,
+    mock_dir: Path | None = None,
+) -> Transport:
+    """Pick the client to use, given how the app is configured."""
+    if mock_dir is not None:
+        return MockTransport(scenario_dir=mock_dir)
+    if impersonate:
+        return CurlCffiTransport(timeout=timeout, proxy=proxy)
+    return HttpxTransport(timeout=timeout, proxy=proxy)
+
+
+class TransportPool:
+    """One transport per route out.
+
+    Without proxies this is a single client, which is the common case. With proxies it is
+    one per proxy, built the first time that proxy is used and kept afterwards, so a
+    connection pool is not thrown away every time a session rotates.
+    """
+
+    def __init__(self, build: Callable[[str | None], Transport]) -> None:
+        self._build = build
+        self._transports: dict[str | None, Transport] = {}
+
+    def get(self, proxy: str | None = None) -> Transport:
+        transport = self._transports.get(proxy)
+        if transport is None:
+            transport = self._build(proxy)
+            self._transports[proxy] = transport
+        return transport
+
+    async def aclose(self) -> None:
+        for transport in self._transports.values():
+            with contextlib.suppress(Exception):
+                await transport.aclose()
+        self._transports.clear()
+
+
 class TransportSession:
     """Owns a transport for the lifetime of a `with` block."""
 
@@ -228,8 +271,8 @@ class TransportSession:
         proxy: str | None = None,
         mock_dir: Path | None = None,
     ) -> Self:
-        if mock_dir is not None:
-            return cls(MockTransport(scenario_dir=mock_dir))
-        if impersonate:
-            return cls(CurlCffiTransport(timeout=timeout, proxy=proxy))
-        return cls(HttpxTransport(timeout=timeout, proxy=proxy))
+        return cls(
+            build_transport(
+                impersonate=impersonate, timeout=timeout, proxy=proxy, mock_dir=mock_dir
+            )
+        )

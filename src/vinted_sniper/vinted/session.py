@@ -22,7 +22,8 @@ from vinted_sniper.log import get_logger
 from vinted_sniper.vinted import headers as hdr
 from vinted_sniper.vinted import urls
 from vinted_sniper.vinted.errors import BlockedError, NetworkError
-from vinted_sniper.vinted.transport import Transport, TransportError
+from vinted_sniper.vinted.proxies import QUARANTINE_BLOCKED_S, QUARANTINE_NETWORK_S, ProxyRotation
+from vinted_sniper.vinted.transport import Transport, TransportError, TransportPool
 
 log = get_logger(__name__)
 
@@ -40,6 +41,9 @@ class Session:
     identity: hdr.BrowserIdentity
     created_at: int
     request_count: int = 0
+    # The route this session's cookie was minted through. Replaying it from somewhere else
+    # is the kind of inconsistency anti-bot systems look for, so it travels with it.
+    proxy: str | None = None
 
     def age_s(self, now: int | None = None) -> int:
         return (now if now is not None else int(time.time())) - self.created_at
@@ -55,14 +59,29 @@ class SessionManager:
     def __init__(
         self,
         db: Database,
-        transport: Transport,
+        transport: Transport | TransportPool,
         *,
         rotate_after_minutes: int = 60,
+        proxies: ProxyRotation | None = None,
     ) -> None:
         self._db = db
-        self._transport = transport
+        self._pool: TransportPool | None = None
+        self._transport: Transport | None = None
+        if isinstance(transport, TransportPool):
+            self._pool = transport
+        else:
+            self._transport = transport
         self._rotate_after_s = rotate_after_minutes * 60
+        self._proxies = proxies or ProxyRotation()
         self._cache: dict[str, Session] = {}
+
+    def transport_for(self, session: Session) -> Transport:
+        """The client that reaches Vinted the same way this session was created."""
+        if self._pool is not None:
+            return self._pool.get(session.proxy)
+        if self._transport is None:  # pragma: no cover - one of the two is always set
+            raise RuntimeError("SessionManager was built without a transport")
+        return self._transport
 
     async def get(self, tld: str) -> Session:
         """Return a usable session for a site, creating or replacing it as needed."""
@@ -83,26 +102,39 @@ class SessionManager:
         self._cache.pop(tld, None)
         await self._db.execute("DELETE FROM sessions WHERE tld = ?", (tld,))
 
-    async def rotate(self, tld: str) -> Session:
-        """Replace a session outright, with a different browser persona."""
+    async def rotate(self, tld: str, *, blocked: bool = False) -> Session:
+        """Replace a session outright, with a different browser persona.
+
+        When the old one was refused rather than merely old, its route is set aside too:
+        a new cookie down the same blocked path buys nothing.
+        """
+        previous = self._cache.get(tld)
         await self.invalidate(tld)
+        if blocked and previous is not None:
+            self._proxies.bench(previous.proxy, QUARANTINE_BLOCKED_S, "refused by Vinted")
         return await self.get(tld)
 
     async def bootstrap(self, tld: str) -> Session:
         """Load the site's homepage the way a browser would, and keep what it sets."""
         identity = hdr.pick_identity()
+        proxy = self._proxies.acquire()
         root = urls.site_root(tld)
+        transport = self._pool.get(proxy) if self._pool is not None else self._transport
+        if transport is None:  # pragma: no cover - one of the two is always set
+            raise RuntimeError("SessionManager was built without a transport")
 
         try:
-            response = await self._transport.get(
+            response = await transport.get(
                 root,
                 headers=hdr.document_headers(tld, identity),
                 follow_redirects=True,
             )
         except TransportError as exc:
+            self._proxies.bench(proxy, QUARANTINE_NETWORK_S, "could not connect")
             raise NetworkError(f"could not reach {root}: {exc}") from exc
 
         if response.status_code == HTTPStatus.FORBIDDEN:
+            self._proxies.bench(proxy, QUARANTINE_BLOCKED_S, "refused at the homepage")
             raise BlockedError(
                 f"vinted.{tld} refused the connection before we could get a session. "
                 "This is usually the address you are coming from rather than the app; "
@@ -119,10 +151,16 @@ class SessionManager:
                 "being challenged."
             )
 
-        session = Session(tld=tld, cookies=cookies, identity=identity, created_at=int(time.time()))
+        session = Session(
+            tld=tld,
+            cookies=cookies,
+            identity=identity,
+            created_at=int(time.time()),
+            proxy=proxy,
+        )
         await self._save(session)
         self._cache[tld] = session
-        log.info("session.created", tld=tld, cookies=len(cookies))
+        log.info("session.created", tld=tld, cookies=len(cookies), via_proxy=proxy is not None)
         return session
 
     async def note_request(self, session: Session) -> None:

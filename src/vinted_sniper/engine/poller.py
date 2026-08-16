@@ -81,7 +81,7 @@ class Poller:
             # off hard and come back with a different session.
             self._consecutive_errors += 1
             await self._repo.record_failure(self.query.id, "http_403", str(exc))
-            await self._sessions.rotate(self.query.tld)
+            await self._sessions.rotate(self.query.tld, blocked=True)
             delay = self._backoff()
             self._log.warning("poll.blocked", error=str(exc), retry_in_s=round(delay))
             return delay

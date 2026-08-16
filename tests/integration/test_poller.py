@@ -20,8 +20,9 @@ from vinted_sniper.config import Settings
 from vinted_sniper.db.repo import Repo
 from vinted_sniper.engine.poller import Poller
 from vinted_sniper.vinted.client import VintedClient
+from vinted_sniper.vinted.proxies import ProxyRotation
 from vinted_sniper.vinted.session import SessionManager
-from vinted_sniper.vinted.transport import Response
+from vinted_sniper.vinted.transport import Response, TransportPool
 
 
 async def make_poller(
@@ -186,6 +187,39 @@ async def test_a_blocked_request_backs_off_and_replaces_the_session(
     transport.queue_catalog([])
     assert await poller.tick() > 0
     assert (await repo.get_state(poller.query.id)).last_status == "ok"
+
+
+async def test_a_blocked_proxy_is_set_aside_and_the_next_one_is_used(
+    transport: ScriptedTransport, repo: Repo, settings: Settings, db: Any, tmp_path: Any
+) -> None:
+    proxy_file = tmp_path / "proxies.txt"
+    proxy_file.write_text("http://one.test\nhttp://two.test")
+    rotation = ProxyRotation.from_file(proxy_file)
+
+    query_id = await repo.add_query(
+        name="proxied",
+        url="https://www.vinted.fr/catalog?search_text=x",
+        tld="fr",
+        params={"search_text": "x"},
+        poll_interval_s=60,
+    )
+    query = await repo.get_query(query_id)
+    assert query is not None
+
+    sessions = SessionManager(db, TransportPool(lambda _proxy: transport), proxies=rotation)
+    poller = Poller(
+        query,
+        repo=repo,
+        client=VintedClient(None, sessions),
+        sessions=sessions,
+        settings=settings,
+        stop=asyncio.Event(),
+    )
+
+    transport.queue_status(403, "Forbidden")
+    await poller.tick()
+
+    assert rotation.available() == 1, "the route that was refused should sit out"
 
 
 async def test_backoff_grows_with_repeated_blocks(

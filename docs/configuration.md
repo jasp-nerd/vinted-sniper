@@ -37,7 +37,7 @@ Every variable is prefixed `VINTED_SNIPER_`. All of them are optional except whe
 |---|---|---|
 | `SESSION_ROTATE_MINUTES` | `60` | Start a fresh anonymous session after this long. Blocks track session age more than request rate. |
 | `HTTP_IMPERSONATE` | `false` | Make requests present a real browser's TLS fingerprint. Needs the `impersonate` extra. Only worth turning on if you are being blocked while the same search loads fine in a browser. |
-| `PROXY_FILE` | unset | Path to a text file of proxy URLs, one per line. Rarely needed. |
+| `PROXY_FILE` | unset | Path to a text file of proxy URLs, one per line (blank lines and `#` comments ignored). Used in turn; one that gets refused sits out for ten minutes. If all of them are sitting out, requests go direct rather than not at all. Rarely needed. |
 
 ### Noticing problems
 

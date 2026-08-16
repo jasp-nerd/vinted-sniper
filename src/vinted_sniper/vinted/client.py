@@ -45,7 +45,7 @@ class VintedClient:
 
     def __init__(
         self,
-        transport: Transport,
+        transport: Transport | None,
         sessions: SessionManager,
         *,
         keep_raw: bool = False,
@@ -63,12 +63,13 @@ class VintedClient:
         the session and the schedule.
         """
         session = await self._sessions.get(tld)
+        transport = self._transport or self._sessions.transport_for(session)
         query = dict(params)
         query["per_page"] = str(PER_PAGE)
         query["time"] = str(int(time.time()) - self._rng.randint(*_TIME_SKEW_RANGE_S))
 
         try:
-            response = await self._transport.get(
+            response = await transport.get(
                 urls.catalog_endpoint(tld),
                 headers=hdr.api_headers(tld, session.identity),
                 cookies=session.cookie_header,

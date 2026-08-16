@@ -26,8 +26,9 @@ from vinted_sniper.engine.poller import Poller
 from vinted_sniper.engine.watchdog import Watchdog
 from vinted_sniper.log import get_logger
 from vinted_sniper.vinted.client import VintedClient
+from vinted_sniper.vinted.proxies import ProxyRotation
 from vinted_sniper.vinted.session import SessionManager
-from vinted_sniper.vinted.transport import TransportSession
+from vinted_sniper.vinted.transport import Transport, TransportPool, build_transport
 
 log = get_logger(__name__)
 
@@ -61,15 +62,26 @@ class Application:
             await apply_pending(db)
             repo = Repo(db)
 
-            async with TransportSession.build(
-                impersonate=settings.http_impersonate,
-                timeout=settings.request_timeout_s,
-                mock_dir=settings.mock_scenario_dir if settings.fetch_mode == "mock" else None,
-            ) as transport:
-                sessions = SessionManager(
-                    db, transport, rotate_after_minutes=settings.session_rotate_minutes
+            proxies = ProxyRotation.from_file(settings.proxy_file)
+            mock_dir = settings.mock_scenario_dir if settings.fetch_mode == "mock" else None
+
+            def build(proxy: str | None) -> Transport:
+                return build_transport(
+                    impersonate=settings.http_impersonate,
+                    timeout=settings.request_timeout_s,
+                    proxy=proxy,
+                    mock_dir=mock_dir,
                 )
-                client = VintedClient(transport, sessions, keep_raw=settings.keep_raw_json)
+
+            pool = TransportPool(build)
+            try:
+                sessions = SessionManager(
+                    db,
+                    pool,
+                    rotate_after_minutes=settings.session_rotate_minutes,
+                    proxies=proxies,
+                )
+                client = VintedClient(None, sessions, keep_raw=settings.keep_raw_json)
                 dispatcher = Dispatcher(
                     repo=repo,
                     settings=settings,
@@ -111,6 +123,8 @@ class Application:
                     for error in group.exceptions:
                         log.exception("app.task_failed", error=str(error))
                     raise
+            finally:
+                await pool.aclose()
 
         log.info("app.stopped")
 
