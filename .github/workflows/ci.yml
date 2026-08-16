@@ -49,9 +49,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Scans the whole history rather than a commit range. The range-based action cannot
+      # diff the first push, because the root commit has no parent to compare against.
+      - name: Scan for secrets
+        run: |
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:latest \
+            detect --source /repo --redact --no-banner --verbose
 
   docker:
     runs-on: ubuntu-latest
