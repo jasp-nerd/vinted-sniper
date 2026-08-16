@@ -26,9 +26,35 @@ C'est tout.
 
 ## Démarrage rapide
 
-Il vous faut Docker, et rien d'autre. Jamais utilisé ? [Le guide
-d'hébergement](docs/self-hosting.md) part de zéro, installation de Docker comprise, sur un
-Raspberry Pi ou un vieux portable. Deux commandes :
+La plupart des gens le font tourner sur leur propre ordinateur, et cela marche très bien. Il
+vous faut Docker, rien d'autre. Une chose à savoir : les alertes n'arrivent que pendant que
+l'ordinateur est allumé et éveillé. Pour des alertes en continu, [le guide
+d'hébergement](docs/self-hosting.md) montre la même installation sur un Raspberry Pi, un NAS
+ou un petit serveur.
+
+1. **Installez Docker Desktop.** Téléchargement gratuit pour [Windows ou
+   Mac](https://www.docker.com/products/docker-desktop/) ; sous Linux, installez [Docker
+   Engine](https://docs.docker.com/engine/install/).
+2. **Téléchargez [docker-compose.yml](https://raw.githubusercontent.com/jasp-nerd/vinted-sniper/main/docker-compose.yml).**
+   Clic droit sur ce lien, « Enregistrer le lien sous... », puis placez le fichier dans un
+   dossier vide.
+3. **Lancez-le.** Ouvrez un terminal dans ce dossier et tapez `docker compose up -d`. Sous
+   Windows, clic droit dans le dossier puis « Ouvrir dans le terminal ». Sur Mac, ouvrez le
+   Terminal, tapez `cd ` suivi d'une espace, glissez le dossier dans la fenêtre et validez.
+4. **Ouvrez http://localhost:8000** et donnez-lui deux choses :
+   - **Où envoyer les alertes.** Le plus simple est un webhook Discord : dans votre serveur,
+     Paramètres → Intégrations → Webhooks → Nouveau webhook → Copier l'URL. Collez-la.
+   - **Une recherche à surveiller.** Cherchez sur Vinted avec les filtres qui vous vont et
+     copiez la barre d'adresse, ou construisez la recherche directement dans le tableau de
+     bord.
+
+C'est terminé. L'outil reste silencieux sur ce qui est déjà en ligne et vous écrit quand
+quelque chose de nouveau apparaît. Pas de connexion, pas de fichier à éditer : le tableau de
+bord n'écoute que sur votre propre machine. (Vous comptez l'exposer à d'autres machines ?
+Définissez d'abord `VINTED_SNIPER_WEB_AUTH_TOKEN`, car il affiche vos URL de webhook.
+[docs/configuration.md](docs/configuration.md) donne les détails.)
+
+À l'aise dans un terminal ? Les étapes 2 et 3 tiennent en deux commandes :
 
 ```bash
 curl -O https://raw.githubusercontent.com/jasp-nerd/vinted-sniper/main/docker-compose.yml
@@ -37,19 +63,6 @@ docker compose up -d
 
 (Sous Windows PowerShell, écrivez `curl.exe` au lieu de `curl`, car `curl` y désigne autre
 chose.)
-
-Ouvrez ensuite **http://localhost:8000** et donnez-lui deux choses :
-
-1. **Où envoyer les alertes.** Le plus simple est un webhook Discord : dans votre serveur,
-   Paramètres → Intégrations → Webhooks → Nouveau webhook → Copier l'URL. Collez-la.
-2. **Une recherche à surveiller.** Cherchez sur Vinted avec les filtres qui vous vont, puis
-   copiez la barre d'adresse. Collez-la aussi.
-
-C'est terminé. L'outil reste silencieux sur ce qui est déjà en ligne et vous écrit quand
-quelque chose de nouveau apparaît. Pas de connexion, pas de fichier à éditer : le tableau de
-bord n'écoute que sur votre propre machine. (Vous comptez l'exposer à d'autres machines ?
-Définissez d'abord `VINTED_SNIPER_WEB_AUTH_TOKEN`, car il affiche vos URL de webhook.
-[docs/configuration.md](docs/configuration.md) donne les détails.)
 
 ### Sans Docker
 

@@ -23,9 +23,32 @@ or so and tells you about listings that weren't there before. That's the whole i
 
 ## Quickstart
 
-You need Docker, and that's all. Never used it? [The self-hosting
-guide](docs/self-hosting.md) starts from zero, including installing Docker on a Raspberry Pi
-or an old laptop. Two commands:
+Most people run this on their own computer, and that works fine. You need Docker, nothing
+else. One thing to know: alerts only arrive while the computer is on and awake. For alerts
+around the clock, [the self-hosting guide](docs/self-hosting.md) shows the same setup on a
+Raspberry Pi, a NAS or a cheap server.
+
+1. **Install Docker Desktop.** Free download for [Windows or
+   Mac](https://www.docker.com/products/docker-desktop/); on Linux, install [Docker
+   Engine](https://docs.docker.com/engine/install/).
+2. **Download [docker-compose.yml](https://raw.githubusercontent.com/jasp-nerd/vinted-sniper/main/docker-compose.yml).**
+   Right-click that link, choose "Save link as...", and put the file in an empty folder.
+3. **Start it.** Open a terminal in that folder and run `docker compose up -d`. On Windows,
+   right-click inside the folder and choose "Open in Terminal". On a Mac, open Terminal,
+   type `cd ` with a space after it, drag the folder into the window, and press Enter.
+4. **Open http://localhost:8000** and give it two things:
+   - **Somewhere to send alerts.** Easiest is a Discord webhook: in your Discord server,
+     Settings → Integrations → Webhooks → New Webhook → Copy URL. Paste it in.
+   - **A search to watch.** Search on Vinted with the filters you want and copy the
+     address bar, or build the search right there in the dashboard.
+
+Done. It stays quiet about what's already listed and messages you when something new
+appears. There's no sign-in and no config file to edit: the dashboard listens on your own
+machine only. (Going to expose it to other machines? Set `VINTED_SNIPER_WEB_AUTH_TOKEN`
+first; it shows your webhook URLs. [docs/configuration.md](docs/configuration.md) has the
+details.)
+
+Comfortable in a terminal? Steps 2 and 3 are just:
 
 ```bash
 curl -O https://raw.githubusercontent.com/jasp-nerd/vinted-sniper/main/docker-compose.yml
@@ -34,19 +57,6 @@ docker compose up -d
 
 (On Windows PowerShell, write `curl.exe` instead of `curl`, because plain `curl` means
 something else there.)
-
-Now open **http://localhost:8000** and give it two things:
-
-1. **Somewhere to send alerts.** Easiest is a Discord webhook: in your Discord server,
-   Settings → Integrations → Webhooks → New Webhook → Copy URL. Paste it in.
-2. **A search to watch.** Search on Vinted with the filters you want, then copy the address
-   bar. Paste that in too.
-
-Done. It stays quiet about what's already listed and messages you when something new
-appears. There's no sign-in and no config file to edit: the dashboard listens on your own
-machine only. (Going to expose it to other machines? Set `VINTED_SNIPER_WEB_AUTH_TOKEN`
-first; it shows your webhook URLs. [docs/configuration.md](docs/configuration.md) has the
-details.)
 
 ### Without Docker
 
