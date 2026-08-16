@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import json
 from typing import Any
 
 import httpx
@@ -43,6 +44,11 @@ MAX_RETRY_DELAY_S = 5.0
 TELEGRAM_GLOBAL_PER_S = 25.0
 
 
+def _awaiting_pairing(destination: Destination) -> bool:
+    """True for a Telegram destination that no chat has claimed yet."""
+    return destination.kind == "telegram" and not destination.config.get("chat_id")
+
+
 class Dispatcher:
     """Runs one sending worker per destination."""
 
@@ -62,6 +68,7 @@ class Dispatcher:
         self._client = client or httpx.AsyncClient(timeout=20.0)
         self._owns_client = client is None
         self._senders: dict[int, Sender] = {}
+        self._signatures: dict[int, str] = {}
         self._discord_gate = Gate()
         self._telegram_budget = TokenBucket(TELEGRAM_GLOBAL_PER_S, capacity=TELEGRAM_GLOBAL_PER_S)
 
@@ -113,6 +120,12 @@ class Dispatcher:
     async def _serve(self, destination_id: int) -> int:
         destination = await self._repo.get_destination(destination_id)
         if destination is None or not destination.active:
+            return 0
+
+        if _awaiting_pairing(destination):
+            # Created but nobody has tapped the link yet. Waiting is not a misconfiguration,
+            # so this must not switch the destination off; notifications queue until it is
+            # claimed, or expire on their own.
             return 0
 
         try:
@@ -186,10 +199,18 @@ class Dispatcher:
                 await sender.send_status(message)
 
     async def _sender_for(self, destination: Destination) -> Sender:
-        if (existing := self._senders.get(destination.id)) is not None:
-            return existing
+        # Keyed on the settings too: pairing a Telegram chat rewrites them, and a sender
+        # built from the old ones would keep sending nowhere.
+        signature = json.dumps(destination.config, sort_keys=True)
+        cached = self._senders.get(destination.id)
+        if cached is not None and self._signatures.get(destination.id) == signature:
+            return cached
+        if cached is not None:
+            await self._drop_sender(destination.id)
+
         sender = self._build(destination)
         self._senders[destination.id] = sender
+        self._signatures[destination.id] = signature
         return sender
 
     def _build(self, destination: Destination) -> Sender:
@@ -215,6 +236,7 @@ class Dispatcher:
                 raise SenderConfigError(f"unknown destination type {unknown!r}")
 
     async def _drop_sender(self, destination_id: int) -> None:
+        self._signatures.pop(destination_id, None)
         sender = self._senders.pop(destination_id, None)
         if sender is not None:
             with contextlib.suppress(Exception):

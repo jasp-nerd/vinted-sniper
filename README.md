@@ -1,25 +1,26 @@
 **English** · [Français](README.fr.md)
 
-# vinted-sniper
+<img src="docs/media/banner.svg" alt="vinted-sniper — get told the moment something matches" width="640">
+
+[![CI](https://github.com/jasp-nerd/vinted-sniper/actions/workflows/ci.yml/badge.svg)](https://github.com/jasp-nerd/vinted-sniper/actions/workflows/ci.yml)
+[![Image](https://ghcr-badge.egpl.dev/jasp-nerd/vinted-sniper/latest_tag?label=image)](https://github.com/jasp-nerd/vinted-sniper/pkgs/container/vinted-sniper)
+[![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/)
+[![MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 Watch a Vinted search and get a message when something new matches — in Telegram, Discord,
 or wherever else you want it.
 
-[![CI](https://github.com/jasp/vinted-sniper/actions/workflows/ci.yml/badge.svg)](https://github.com/jasp/vinted-sniper/actions/workflows/ci.yml)
-[![Image](https://ghcr-badge.egpl.dev/jasp/vinted-sniper/latest_tag?label=image)](https://github.com/jasp/vinted-sniper/pkgs/container/vinted-sniper)
-[![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/)
-[![MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-
 You paste the URL of a search you already made on Vinted. It checks that search every minute
 or so and tells you about listings that weren't there before. That's the whole idea.
 
-```
-Nike Air Max 90
-15.00 EUR (16.45 EUR with protection)
-Nike · 42 · Very good
-Listed 20:14 UTC
-[ Open listing ]  [ Message seller ]  [ Buy ]
-```
+![Adding a search by pasting a Vinted URL, the saved searches with their health, and the listings arriving in Discord and Telegram](docs/media/demo.gif)
+
+The same listing, as it arrives in each:
+
+<p>
+  <img src="docs/media/discord.png" width="420" alt="A Discord notification showing the title, the price with buyer protection included, size, brand, condition, seller and photo, with buttons to open the listing, message the seller, or buy">
+  <img src="docs/media/telegram.png" width="380" alt="The same kind of notification in Telegram: photo preview, price with buyer protection included, brand, size, condition, seller, and the same three buttons">
+</p>
 
 ## What it does that others don't
 
@@ -47,16 +48,16 @@ notifying you about ninety-six things you didn't ask about.
 You need Docker. Three commands:
 
 ```bash
-curl -O https://raw.githubusercontent.com/jasp/vinted-sniper/main/docker-compose.yml
-curl -o .env https://raw.githubusercontent.com/jasp/vinted-sniper/main/.env.example
+curl -O https://raw.githubusercontent.com/jasp-nerd/vinted-sniper/main/docker-compose.yml
+curl -o .env https://raw.githubusercontent.com/jasp-nerd/vinted-sniper/main/.env.example
 docker compose up -d
 ```
 
 On Windows PowerShell, `curl` is an alias for something else, so use this instead:
 
 ```powershell
-curl.exe -O https://raw.githubusercontent.com/jasp/vinted-sniper/main/docker-compose.yml
-curl.exe -o .env https://raw.githubusercontent.com/jasp/vinted-sniper/main/.env.example
+curl.exe -O https://raw.githubusercontent.com/jasp-nerd/vinted-sniper/main/docker-compose.yml
+curl.exe -o .env https://raw.githubusercontent.com/jasp-nerd/vinted-sniper/main/.env.example
 docker compose up -d
 ```
 

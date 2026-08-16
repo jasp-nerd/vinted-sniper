@@ -10,6 +10,7 @@ from typing import Any
 import httpx
 import pytest
 
+from vinted_sniper.botctl.telegram_bot import claim_pairing, create_pairing
 from vinted_sniper.config import Settings
 from vinted_sniper.db.repo import Query, Repo
 from vinted_sniper.deliver.dispatcher import MAX_ATTEMPTS, Dispatcher
@@ -256,3 +257,59 @@ async def test_every_destination_type_can_be_created(repo: Repo, kind: str) -> N
     destination = await repo.get_destination(destination_id)
     assert destination is not None
     assert destination.kind == kind
+
+
+async def test_a_telegram_destination_waiting_to_be_paired_is_left_alone(
+    repo: Repo, settings: Settings
+) -> None:
+    """Tapping the pairing link can happen after the first listing turns up.
+
+    A destination nobody has claimed yet is waiting, not misconfigured — switching it off
+    would mean the link you are about to tap no longer works.
+    """
+    query = await a_search(repo)
+    destination_id = await repo.add_destination(
+        kind="telegram", name="waiting", config={"pairing_code": "abc", "created_at": 0}
+    )
+    await repo.record_new_items(query, [listing(1)], [destination_id])
+
+    endpoint = FakeEndpoint()
+    sent = await make_dispatcher(repo, settings, endpoint).drain()
+
+    assert sent == 0
+    destination = await repo.get_destination(destination_id)
+    assert destination is not None
+    assert destination.active is True, "waiting to be paired is not a failure"
+    assert await repo.outbox_depth() == 1, "the notification waits for the chat to be bound"
+
+
+async def test_connecting_a_chat_drops_the_backlog(repo: Repo) -> None:
+    """Whoever just tapped the link wants what happens next, not a hundred old alerts."""
+    query = await a_search(repo)
+    destination_id, code = await create_pairing(repo, "Telegram")
+    await repo.record_new_items(query, [listing(i) for i in range(1, 40)], [destination_id])
+    assert await repo.outbox_depth() == 39
+
+    assert await claim_pairing(repo, code, chat_id=4242, thread_id=None) == destination_id
+
+    assert await repo.outbox_depth() == 0
+    destination = await repo.get_destination(destination_id)
+    assert destination is not None
+    assert destination.config["chat_id"] == "4242"
+    assert destination.active is True
+
+
+async def test_asking_for_a_second_pairing_link_reuses_the_waiting_destination(
+    repo: Repo,
+) -> None:
+    """Otherwise the searches stay pointed at the abandoned one and the new link is inert."""
+    query = await a_search(repo)
+    first_id, _ = await create_pairing(repo, "Telegram")
+    await repo.route(query.id, first_id)
+
+    second_id, code = await create_pairing(repo, "Telegram")
+
+    assert second_id == first_id
+    assert len(await repo.list_destinations()) == 1
+    assert await claim_pairing(repo, code, chat_id=7, thread_id=None) == first_id
+    assert await repo.destination_ids_for_query(query.id) == [first_id]

@@ -34,8 +34,8 @@ web = ["fastapi>=0.115", "uvicorn[standard]>=0.34", "jinja2>=3.1", "python-multi
 vinted-sniper = "vinted_sniper.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/jasp/vinted-sniper"
-Issues = "https://github.com/jasp/vinted-sniper/issues"
+Homepage = "https://github.com/jasp-nerd/vinted-sniper"
+Issues = "https://github.com/jasp-nerd/vinted-sniper/issues"
 
 [dependency-groups]
 dev = [
@@ -90,6 +90,9 @@ ignore = [
 # satisfy a complexity metric would scatter related handlers across files for no gain.
 "src/vinted_sniper/web/server.py" = ["C901", "PLR0915", "PLR0917", "PLR0913"]
 "src/vinted_sniper/cli.py" = ["C901", "PLR0911"]
+# One send attempt has several distinct outcomes — delivered, paused, gone, retry, gave
+# up — and each needs its own early exit. Splitting them would hide the flow, not clarify it.
+"src/vinted_sniper/deliver/dispatcher.py" = ["C901", "PLR0911"]
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10

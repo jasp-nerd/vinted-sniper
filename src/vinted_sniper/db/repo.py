@@ -527,6 +527,14 @@ class Repo:
             [(error[:500], outbox_id) for outbox_id in outbox_ids],
         )
 
+    async def discard_pending_for(self, destination_id: int, reason: str) -> int:
+        """Throw away what is queued for a destination without sending it."""
+        return await self._db.execute(
+            "UPDATE outbox SET status = 'cancelled', last_error = ? "
+            "WHERE destination_id = ? AND status = 'pending'",
+            (reason[:500], destination_id),
+        )
+
     async def recover_leases(self) -> int:
         """Return notifications stranded by a crash to the queue. Run once at startup.
 

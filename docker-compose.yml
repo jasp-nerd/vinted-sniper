@@ -1,6 +1,6 @@
 services:
   vinted-sniper:
-    image: ghcr.io/jasp/vinted-sniper:latest
+    image: ghcr.io/jasp-nerd/vinted-sniper:latest
     # To run your own build instead of the published image, comment out `image:` above
     # and uncomment this:
     # build: .

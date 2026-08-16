@@ -39,13 +39,22 @@ def new_pairing_code() -> str:
 
 
 async def create_pairing(repo: Repo, name: str) -> tuple[int, str]:
-    """Set up a Telegram destination waiting for someone to claim it."""
+    """Set up a Telegram destination waiting for someone to claim it.
+
+    Asking for a link twice — because the first one expired, or went to the wrong chat —
+    refreshes the code on the destination already waiting rather than leaving a second one
+    behind. Otherwise the searches stay routed to the abandoned one and the new link
+    connects you to a destination nothing feeds.
+    """
     code = new_pairing_code()
-    destination_id = await repo.add_destination(
-        kind="telegram",
-        name=name,
-        config={"pairing_code": code, "created_at": int(time.time())},
-    )
+    config = {"pairing_code": code, "created_at": int(time.time())}
+
+    for destination in await repo.list_destinations():
+        if destination.kind == "telegram" and destination.config.get("pairing_code"):
+            await repo.update_destination_config(destination.id, config)
+            return destination.id, code
+
+    destination_id = await repo.add_destination(kind="telegram", name=name, config=config)
     return destination_id, code
 
 
@@ -61,8 +70,24 @@ async def claim_pairing(repo: Repo, code: str, chat_id: int, thread_id: int | No
         if thread_id is not None:
             new_config["message_thread_id"] = str(thread_id)
         await repo.update_destination_config(destination.id, new_config)
+
+        # Anything queued while this chat did not exist yet is not news to whoever just
+        # connected — it is a wall of alerts for listings they never asked about. They want
+        # what turns up from now on.
+        dropped = await repo.discard_pending_for(
+            destination.id, "queued before the chat was connected"
+        )
+        if dropped:
+            log.info("telegram.backlog_dropped", destination_id=destination.id, count=dropped)
         return destination.id
     return None
+
+
+async def _pending_pairing_exists(repo: Repo) -> bool:
+    return any(
+        destination.kind == "telegram" and destination.config.get("pairing_code")
+        for destination in await repo.list_destinations()
+    )
 
 
 def build_dispatcher(repo: Repo) -> Dispatcher:
@@ -72,11 +97,17 @@ def build_dispatcher(repo: Repo) -> Dispatcher:
     async def handle_start(message: Message, command: CommandObject) -> None:
         code = (command.args or "").strip()
         if not code:
-            await message.answer(
-                "Hello. This bot delivers Vinted alerts.\n\n"
-                "To connect it, open vinted-sniper, add a Telegram destination, and tap the "
-                "link it gives you."
+            # Typing /start by hand is the common way to arrive here: the code travels in
+            # the link, so a typed command carries nothing to match against.
+            waiting = await _pending_pairing_exists(repo)
+            extra = (
+                "\n\nThere is a connection waiting. Tap the link vinted-sniper printed, "
+                "or send:\n/start <the code from that link>"
+                if waiting
+                else "\n\nTo connect it, run `vinted-sniper pair-telegram` and tap the link "
+                "it prints, in the chat you want alerts in."
             )
+            await message.answer(f"Hello. This bot delivers Vinted alerts.{extra}")
             return
 
         thread_id = message.message_thread_id
@@ -94,13 +125,21 @@ def build_dispatcher(repo: Repo) -> Dispatcher:
             "Send /status any time to check that everything is still running."
         )
 
+    @dispatcher.message(Command("help"))
+    async def handle_help(message: Message) -> None:
+        await message.answer(
+            "/status — is everything still running\n"
+            "/start <code> — connect this chat to vinted-sniper\n\n"
+            "Searches and destinations are managed in vinted-sniper itself."
+        )
+
     @dispatcher.message(Command("status"))
     async def handle_status(message: Message) -> None:
         await message.answer(await _status_text(repo), parse_mode="HTML")
 
     @dispatcher.message(F.text)
     async def handle_anything_else(message: Message) -> None:
-        await message.answer("I understand /status. Everything else is set up in vinted-sniper.")
+        await message.answer("I understand /status and /help.")
 
     return dispatcher
 

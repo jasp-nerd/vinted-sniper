@@ -1,28 +1,29 @@
 [English](README.md) · **Français**
 
-# vinted-sniper
+<img src="docs/media/banner.svg" alt="vinted-sniper — être prévenu dès qu'une annonce correspond" width="640">
 
-Surveillez une recherche Vinted et recevez un message dès qu'une nouvelle annonce
-correspond — sur Telegram, Discord, ou ailleurs.
-
-[![CI](https://github.com/jasp/vinted-sniper/actions/workflows/ci.yml/badge.svg)](https://github.com/jasp/vinted-sniper/actions/workflows/ci.yml)
-[![Image](https://ghcr-badge.egpl.dev/jasp/vinted-sniper/latest_tag?label=image)](https://github.com/jasp/vinted-sniper/pkgs/container/vinted-sniper)
+[![CI](https://github.com/jasp-nerd/vinted-sniper/actions/workflows/ci.yml/badge.svg)](https://github.com/jasp-nerd/vinted-sniper/actions/workflows/ci.yml)
+[![Image](https://ghcr-badge.egpl.dev/jasp-nerd/vinted-sniper/latest_tag?label=image)](https://github.com/jasp-nerd/vinted-sniper/pkgs/container/vinted-sniper)
 [![Python 3.13+](https://img.shields.io/badge/python-3.13+-blue.svg)](https://www.python.org/)
 [![MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 > La version anglaise fait référence. Cette traduction peut avoir un temps de retard.
 
+Surveillez une recherche Vinted et recevez un message dès qu'une nouvelle annonce
+correspond — sur Telegram, Discord, ou ailleurs.
+
 Vous collez l'URL d'une recherche que vous avez déjà faite sur Vinted. L'outil vérifie cette
 recherche environ une fois par minute et vous signale les annonces qui n'y étaient pas avant.
 C'est tout.
 
-```
-Nike Air Max 90
-15,00 EUR (16,45 EUR avec la protection acheteurs)
-Nike · 42 · Très bon état
-Publié à 20h14 UTC
-[ Voir l'annonce ]  [ Contacter ]  [ Acheter ]
-```
+![Ajout d'une recherche en collant une URL Vinted, l'état de chaque recherche, et les annonces qui arrivent dans Discord et Telegram](docs/media/demo.gif)
+
+La même annonce, telle qu'elle arrive dans chacun :
+
+<p>
+  <img src="docs/media/discord.png" width="420" alt="Une notification Discord : titre, prix protection acheteurs comprise, taille, marque, état, vendeur et photo, avec les boutons pour ouvrir l'annonce, contacter le vendeur ou acheter">
+  <img src="docs/media/telegram.png" width="380" alt="La même notification dans Telegram : aperçu photo, prix protection acheteurs comprise, marque, taille, état, vendeur et les trois mêmes boutons">
+</p>
 
 ## Ce qui change par rapport aux autres
 
@@ -51,16 +52,16 @@ déjà sans vous notifier quatre-vingt-seize articles que vous n'avez pas demand
 Il vous faut Docker. Trois commandes :
 
 ```bash
-curl -O https://raw.githubusercontent.com/jasp/vinted-sniper/main/docker-compose.yml
-curl -o .env https://raw.githubusercontent.com/jasp/vinted-sniper/main/.env.example
+curl -O https://raw.githubusercontent.com/jasp-nerd/vinted-sniper/main/docker-compose.yml
+curl -o .env https://raw.githubusercontent.com/jasp-nerd/vinted-sniper/main/.env.example
 docker compose up -d
 ```
 
 Sous Windows PowerShell, `curl` désigne autre chose ; utilisez plutôt :
 
 ```powershell
-curl.exe -O https://raw.githubusercontent.com/jasp/vinted-sniper/main/docker-compose.yml
-curl.exe -o .env https://raw.githubusercontent.com/jasp/vinted-sniper/main/.env.example
+curl.exe -O https://raw.githubusercontent.com/jasp-nerd/vinted-sniper/main/docker-compose.yml
+curl.exe -o .env https://raw.githubusercontent.com/jasp-nerd/vinted-sniper/main/.env.example
 docker compose up -d
 ```
 

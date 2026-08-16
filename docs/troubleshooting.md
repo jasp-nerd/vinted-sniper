@@ -139,7 +139,7 @@ topic.
 Roll back to the previous image tag and open an issue:
 
 ```yaml
-image: ghcr.io/jasp/vinted-sniper:0.1.0
+image: ghcr.io/jasp-nerd/vinted-sniper:0.1.0
 ```
 
 The weekly canary tests against the live site, so an outright break usually gets caught

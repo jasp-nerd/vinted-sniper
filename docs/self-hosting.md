@@ -28,8 +28,8 @@ Then:
 
 ```bash
 mkdir -p ~/vinted-sniper && cd ~/vinted-sniper
-curl -O https://raw.githubusercontent.com/jasp/vinted-sniper/main/docker-compose.yml
-curl -o .env https://raw.githubusercontent.com/jasp/vinted-sniper/main/.env.example
+curl -O https://raw.githubusercontent.com/jasp-nerd/vinted-sniper/main/docker-compose.yml
+curl -o .env https://raw.githubusercontent.com/jasp-nerd/vinted-sniper/main/.env.example
 nano .env          # set a web token if you want the dashboard
 docker compose up -d
 ```
@@ -120,7 +120,7 @@ tag in `docker-compose.yml` and open an issue.
 ## Running without Docker
 
 ```bash
-git clone https://github.com/jasp/vinted-sniper && cd vinted-sniper
+git clone https://github.com/jasp-nerd/vinted-sniper && cd vinted-sniper
 uv sync --extra web
 cp .env.example .env
 uv run vinted-sniper run

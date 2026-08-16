@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="164" viewBox="0 0 780 164" role="img" aria-label="vinted-sniper: get told the moment a Vinted listing matches your search">
+  <g shape-rendering="crispEdges" transform="translate(12,5)">
+    <rect x="28" y="14" width="14" height="14" fill="#007782"/>
+    <rect x="42" y="14" width="14" height="14" fill="#007782"/>
+    <rect x="56" y="14" width="14" height="14" fill="#007782"/>
+    <rect x="112" y="14" width="14" height="14" fill="#007782"/>
+    <rect x="126" y="14" width="14" height="14" fill="#007782"/>
+    <rect x="14" y="28" width="14" height="14" fill="#007782"/>
+    <rect x="28" y="28" width="14" height="14" fill="#007782"/>
+    <rect x="42" y="28" width="14" height="14" fill="#007782"/>
+    <rect x="56" y="28" width="14" height="14" fill="#007782"/>
+    <rect x="98" y="28" width="14" height="14" fill="#007782"/>
+    <rect x="112" y="28" width="14" height="14" fill="#007782"/>
+    <rect x="14" y="42" width="14" height="14" fill="#007782"/>
+    <rect x="28" y="42" width="14" height="14" fill="#007782"/>
+    <rect x="42" y="42" width="14" height="14" fill="#007782"/>
+    <rect x="56" y="42" width="14" height="14" fill="#007782"/>
+    <rect x="98" y="42" width="14" height="14" fill="#007782"/>
+    <rect x="112" y="42" width="14" height="14" fill="#007782"/>
+    <rect x="14" y="56" width="14" height="14" fill="#007782"/>
+    <rect x="28" y="56" width="14" height="14" fill="#007782"/>
+    <rect x="42" y="56" width="14" height="14" fill="#007782"/>
+    <rect x="56" y="56" width="14" height="14" fill="#007782"/>
+    <rect x="84" y="56" width="14" height="14" fill="#007782"/>
+    <rect x="98" y="56" width="14" height="14" fill="#007782"/>
+    <rect x="112" y="56" width="14" height="14" fill="#007782"/>
+    <rect x="28" y="70" width="14" height="14" fill="#007782"/>
+    <rect x="42" y="70" width="14" height="14" fill="#007782"/>
+    <rect x="56" y="70" width="14" height="14" fill="#007782"/>
+    <rect x="84" y="70" width="14" height="14" fill="#007782"/>
+    <rect x="98" y="70" width="14" height="14" fill="#007782"/>
+    <rect x="112" y="70" width="14" height="14" fill="#007782"/>
+    <rect x="28" y="84" width="14" height="14" fill="#007782"/>
+    <rect x="42" y="84" width="14" height="14" fill="#007782"/>
+    <rect x="56" y="84" width="14" height="14" fill="#007782"/>
+    <rect x="84" y="84" width="14" height="14" fill="#007782"/>
+    <rect x="98" y="84" width="14" height="14" fill="#007782"/>
+    <rect x="28" y="98" width="14" height="14" fill="#007782"/>
+    <rect x="42" y="98" width="14" height="14" fill="#007782"/>
+    <rect x="56" y="98" width="14" height="14" fill="#007782"/>
+    <rect x="70" y="98" width="14" height="14" fill="#007782"/>
+    <rect x="84" y="98" width="14" height="14" fill="#007782"/>
+    <rect x="98" y="98" width="14" height="14" fill="#007782"/>
+    <rect x="28" y="112" width="14" height="14" fill="#007782"/>
+    <rect x="42" y="112" width="14" height="14" fill="#007782"/>
+    <rect x="56" y="112" width="14" height="14" fill="#007782"/>
+    <rect x="70" y="112" width="14" height="14" fill="#007782"/>
+    <rect x="84" y="112" width="14" height="14" fill="#007782"/>
+    <rect x="98" y="112" width="14" height="14" fill="#007782"/>
+    <rect x="42" y="126" width="14" height="14" fill="#007782"/>
+    <rect x="56" y="126" width="14" height="14" fill="#007782"/>
+    <rect x="70" y="126" width="14" height="14" fill="#007782"/>
+    <rect x="84" y="126" width="14" height="14" fill="#007782"/>
+    <rect x="56" y="140" width="14" height="14" fill="#007782"/>
+  </g>
+  <text x="200" y="70" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+        font-size="46" font-weight="bold" fill="#007782">vinted-sniper</text>
+  <text x="200" y="104" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+        font-size="18" fill="#808080" font-style="italic">get told the moment something matches</text>
+  <text x="200" y="132" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+        font-size="14" fill="#9a9a9a">Telegram &#183; Discord &#183; ntfy &#183; RSS &#183; 22 country sites &#183; no login</text>
+</svg>

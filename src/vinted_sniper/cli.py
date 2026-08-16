@@ -20,7 +20,7 @@ from vinted_sniper.vinted.errors import BlockedError, VintedError
 from vinted_sniper.vinted.session import SessionManager
 from vinted_sniper.vinted.transport import TransportSession
 
-TROUBLESHOOTING = "https://github.com/jasp/vinted-sniper/blob/main/docs/troubleshooting.md"
+TROUBLESHOOTING = "https://github.com/jasp-nerd/vinted-sniper/blob/main/docs/troubleshooting.md"
 
 
 def build_parser() -> argparse.ArgumentParser:
