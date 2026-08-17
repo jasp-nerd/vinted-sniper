@@ -24,6 +24,11 @@ def catalog_entry(**overrides: Any) -> dict[str, Any]:
             "full_size_url": "https://images.vinted.net/full.jpeg",
             "high_resolution": {"id": "abc", "timestamp": 1_755_374_000},
         },
+        "photos": [
+            {"full_size_url": "https://images.vinted.net/full.jpeg"},
+            {"full_size_url": "https://images.vinted.net/back.jpeg"},
+            {"url": "https://images.vinted.net/label.jpeg"},
+        ],
         "user": {"id": 7, "login": "seller", "feedback_reputation": 0.93, "feedback_count": 41},
         "promoted": False,
         "favourite_count": 2,
@@ -103,6 +108,34 @@ def test_missing_or_reshaped_fields_do_not_lose_the_listing(overrides: dict[str,
 
     assert item.item_id == 9683334896
     assert item.title == "Nike Air"
+
+
+def test_every_photo_is_kept_for_the_gallery() -> None:
+    item = parse_item(catalog_entry(), "fr")
+
+    assert item.photo_urls == (
+        "https://images.vinted.net/full.jpeg",
+        "https://images.vinted.net/back.jpeg",
+        "https://images.vinted.net/label.jpeg",
+    )
+
+
+def test_a_listing_without_the_photos_array_still_has_its_cover() -> None:
+    entry = catalog_entry()
+    del entry["photos"]
+
+    item = parse_item(entry, "fr")
+
+    assert item.photo_urls == ("https://images.vinted.net/full.jpeg",)
+
+
+def test_junk_in_the_photos_array_does_not_lose_the_gallery() -> None:
+    item = parse_item(
+        catalog_entry(photos=[None, "text", {"url": "https://images.vinted.net/ok.jpeg"}, {}]),
+        "fr",
+    )
+
+    assert item.photo_urls == ("https://images.vinted.net/ok.jpeg",)
 
 
 def test_no_label_brand_reads_as_absent() -> None:

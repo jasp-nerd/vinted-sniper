@@ -41,6 +41,9 @@ class Item(BaseModel):
     currency: str | None = None
 
     photo_url: str | None = None
+    # Every photo of the listing in order, cover first. The search response carries the
+    # full set, so a gallery costs no extra requests.
+    photo_urls: tuple[str, ...] = ()
     # The search response has no "listed at" field. The main photo's upload time is the
     # closest thing to it and is what the whole ecosystem uses to judge freshness.
     photo_ts: int | None = None
@@ -143,6 +146,9 @@ def parse_item(payload: dict[str, Any], tld: str, *, keep_raw: bool = False) -> 
     if not isinstance(photo, dict):
         photo = {}
 
+    photo_url = _first(photo, "full_size_url", "url")
+    photo_urls = _photo_urls(payload.get("photos"), photo_url)
+
     user = _first(payload, "user") or {}
     if not isinstance(user, dict):
         user = {}
@@ -160,7 +166,8 @@ def parse_item(payload: dict[str, Any], tld: str, *, keep_raw: bool = False) -> 
         price=price,
         total_price=total_price,
         currency=currency or total_currency,
-        photo_url=_first(photo, "full_size_url", "url"),
+        photo_url=photo_url,
+        photo_urls=photo_urls,
         photo_ts=_coerce_int(_first(photo, "high_resolution.timestamp")),
         seller_login=_text(_first(user, "login")),
         seller_id=_coerce_int(_first(user, "id")),
@@ -172,6 +179,21 @@ def parse_item(payload: dict[str, Any], tld: str, *, keep_raw: bool = False) -> 
         summary=_text(_first(payload, "item_box.accessibility_label")),
         raw=payload if keep_raw else None,
     )
+
+
+def _photo_urls(photos: Any, cover: str | None) -> tuple[str, ...]:
+    """Collect every photo URL in order, falling back to the lone cover photo."""
+    urls_in_order: list[str] = []
+    if isinstance(photos, list):
+        for entry in photos:
+            if not isinstance(entry, dict):
+                continue
+            url = _first(entry, "full_size_url", "url")
+            if isinstance(url, str) and url:
+                urls_in_order.append(url)
+    if not urls_in_order and cover:
+        urls_in_order.append(cover)
+    return tuple(urls_in_order)
 
 
 def _coerce_int(value: Any) -> int | None:

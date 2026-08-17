@@ -384,10 +384,10 @@ class Repo:
         async with self._db.transaction() as conn:
             await conn.executemany(
                 "INSERT OR IGNORE INTO items (item_id, query_id, tld, title, brand, size, "
-                "condition, price, total_price, currency, url, photo_url, photo_ts, "
-                "seller_login, seller_id, seller_rating, seller_feedback_count, "
-                "raw_json, first_seen_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "condition, price, total_price, currency, url, photo_url, photo_urls_json, "
+                "photo_ts, seller_login, seller_id, seller_rating, seller_feedback_count, "
+                "favourite_count, view_count, raw_json, first_seen_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 [
                     (
                         item.item_id,
@@ -402,11 +402,14 @@ class Repo:
                         item.currency,
                         item.url,
                         item.photo_url,
+                        json.dumps(list(item.photo_urls)) if item.photo_urls else None,
                         item.photo_ts,
                         item.seller_login,
                         item.seller_id,
                         item.seller_rating,
                         item.seller_feedback_count,
+                        item.favourite_count,
+                        item.view_count,
                         json.dumps(item.raw) if (keep_raw and item.raw) else None,
                         now,
                     )
@@ -496,11 +499,14 @@ class Repo:
                     ),
                     currency=row["currency"],
                     photo_url=row["photo_url"],
+                    photo_urls=tuple(json.loads(row["photo_urls_json"] or "[]")),
                     photo_ts=row["photo_ts"],
                     seller_login=row["seller_login"],
                     seller_id=row["seller_id"],
                     seller_rating=row["seller_rating"],
                     seller_feedback_count=row["seller_feedback_count"],
+                    favourite_count=row["favourite_count"] or 0,
+                    view_count=row["view_count"] or 0,
                 ),
                 detected_at=row["first_seen_at"],
             )

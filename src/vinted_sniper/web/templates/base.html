@@ -57,6 +57,62 @@
     .row { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
     a { color: var(--accent); }
 
+    /* --- Listing cards ----------------------------------------------------------- */
+    .listing-grid { display: grid; gap: .75rem;
+                    grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); }
+    .listing { background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+               overflow: hidden; display: flex; flex-direction: column; font-size: .84rem; }
+    .listing .photo { position: relative; display: block; width: 100%; aspect-ratio: 4 / 5;
+                      padding: 0; border: 0; border-radius: 0; background: var(--bg);
+                      cursor: zoom-in; }
+    .listing .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .listing .photo .count { position: absolute; top: .45rem; right: .45rem;
+                             background: rgb(0 0 0 / .55); color: #fff; border-radius: 6px;
+                             padding: .06rem .45rem; font-size: .72rem; font-weight: 600; }
+    .listing .no-photo { display: flex; align-items: center; justify-content: center;
+                         aspect-ratio: 4 / 5; color: var(--muted); background: var(--bg); }
+    .listing .body { display: flex; flex-direction: column; gap: .4rem; flex: 1;
+                     padding: .6rem .7rem .7rem; }
+    .listing .title { color: var(--ink); text-decoration: none; font-weight: 600;
+                      line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2;
+                      -webkit-box-orient: vertical; overflow: hidden; }
+    .listing .title:hover { color: var(--accent); }
+    .listing .price strong { font-size: .95rem; }
+    .listing .price .muted { margin-left: .4rem; font-size: .75rem; }
+    .listing .tags { display: flex; flex-wrap: wrap; gap: .3rem; }
+    .tag { border: 1px solid var(--line); background: var(--bg); border-radius: 6px;
+           padding: .02rem .4rem; font-size: .72rem; color: var(--muted); max-width: 100%;
+           overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tag.brand { color: var(--ink); font-weight: 500; }
+    .listing .meta { display: flex; flex-wrap: wrap; gap: .2rem .6rem; font-size: .75rem;
+                     color: var(--muted); }
+    .listing .meta a { color: inherit; }
+    .listing .meta a:hover { color: var(--accent); }
+    .listing .foot { margin-top: auto; padding-top: .1rem; justify-content: space-between;
+                     flex-wrap: nowrap; }
+    .listing .foot .search-name { overflow: hidden; text-overflow: ellipsis;
+                                  white-space: nowrap; }
+    .listing .foot .age { flex-shrink: 0; }
+
+    /* --- The photo lightbox ------------------------------------------------------ */
+    .lightbox { position: fixed; inset: 0; z-index: 50; background: rgb(0 0 0 / .8);
+                display: flex; align-items: center; justify-content: center; }
+    .lightbox[hidden] { display: none; }
+    .lightbox img { max-width: min(92vw, 56rem); max-height: 88vh; object-fit: contain;
+                    border-radius: 10px; }
+    .lightbox button { position: fixed; display: flex; align-items: center;
+                       justify-content: center; width: 2.6rem; height: 2.6rem;
+                       border-radius: 999px; border: 0; background: rgb(0 0 0 / .45);
+                       color: #fff; font-size: 1.5rem; line-height: 1; }
+    .lightbox button:hover { background: rgb(0 0 0 / .7); }
+    .lightbox .lb-close { top: 1rem; right: 1rem; }
+    .lightbox .lb-prev { left: 1rem; top: 50%; transform: translateY(-50%); }
+    .lightbox .lb-next { right: 1rem; top: 50%; transform: translateY(-50%); }
+    .lightbox .lb-counter { position: fixed; bottom: 1rem; left: 50%;
+                            transform: translateX(-50%); color: #fff;
+                            background: rgb(0 0 0 / .45); border-radius: 999px;
+                            padding: .1rem .7rem; font-size: .8rem; }
+
     /* --- The advanced-search builder ------------------------------------------- */
     #builder { border-top: 1px dashed var(--line); margin-top: .85rem; padding-top: .85rem; }
     .option-list { display: flex; flex-wrap: wrap; gap: .3rem .9rem; max-height: 10.5rem;

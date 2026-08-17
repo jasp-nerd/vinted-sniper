@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import json
 import secrets
 import time
 from collections import Counter
@@ -130,7 +131,7 @@ def create_app(settings: Settings, repo: Repo, taxonomy: Taxonomy | None = None)
                 "snapshot": snapshot,
                 "destinations": destinations,
                 "auth_enabled": token is not None,
-                "recent": await repo.recent_items(limit=25),
+                "recent": _listing_views(await repo.recent_items(limit=25), now=int(time.time())),
                 "now": int(time.time()),
                 "min_interval": MIN_POLL_INTERVAL_S,
                 "default_interval": settings.poll_default_interval_s,
@@ -314,6 +315,66 @@ def create_app(settings: Settings, repo: Repo, taxonomy: Taxonomy | None = None)
 
 def _redirect_with_error(message: str) -> RedirectResponse:
     return RedirectResponse(f"/?error={message}", status_code=303)
+
+
+def _listing_views(rows: list[Any], now: int) -> list[dict[str, Any]]:
+    """Rows from the items table as the listing cards want them.
+
+    Photos and formatting are settled here so the template stays declarative, and a row
+    from before the gallery migration degrades to its cover photo rather than an error.
+    """
+    views: list[dict[str, Any]] = []
+    for row in rows:
+        photos: list[str] = []
+        if row["photo_urls_json"]:
+            with contextlib.suppress(ValueError):
+                photos = [str(url) for url in json.loads(row["photo_urls_json"])]
+        if not photos and row["photo_url"]:
+            photos = [row["photo_url"]]
+
+        currency = row["currency"] or ""
+        price = row["price"]
+        total = row["total_price"]
+        # The same 0..1-to-stars reading the notifications use.
+        stars = round(row["seller_rating"] * 50) / 10 if row["seller_rating"] is not None else None
+        views.append(
+            {
+                "title": row["title"] or f"Listing {row['item_id']}",
+                "url": row["url"],
+                "photos": photos,
+                "price": f"{price:.2f} {currency}".strip() if price is not None else None,
+                "total_price": (
+                    f"{total:.2f} {currency}".strip()
+                    if total is not None and total != price
+                    else None
+                ),
+                "brand": row["brand"],
+                "size": row["size"],
+                "condition": row["condition"],
+                "seller_login": row["seller_login"],
+                "seller_url": (
+                    urls.member_url(row["tld"], row["seller_id"]) if row["seller_id"] else None
+                ),
+                "seller_stars": f"{stars:.1f}" if stars is not None else None,
+                "seller_feedback_count": row["seller_feedback_count"],
+                "favourite_count": row["favourite_count"] or 0,
+                "query_name": row["query_name"],
+                "age": _age(now - row["first_seen_at"]),
+            }
+        )
+    return views
+
+
+def _age(seconds: int) -> str:
+    """A found-time a human scans, not arithmetic they have to do."""
+    seconds = max(seconds, 0)
+    if seconds < 60:  # noqa: PLR2004
+        return f"{seconds}s ago"
+    if seconds < 3600:  # noqa: PLR2004
+        return f"{seconds // 60}m ago"
+    if seconds < 86400:  # noqa: PLR2004
+        return f"{seconds // 3600}h ago"
+    return f"{seconds // 86400}d ago"
 
 
 def _id_list(raw: str) -> str:

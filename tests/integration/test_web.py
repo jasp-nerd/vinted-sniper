@@ -7,8 +7,9 @@ it holds webhook URLs and chat ids — so "is it locked" is a correctness questi
 from __future__ import annotations
 
 import json
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from pathlib import Path
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -18,6 +19,7 @@ from tests.conftest import ScriptedTransport
 from vinted_sniper.config import Settings
 from vinted_sniper.db import Database
 from vinted_sniper.db.repo import Repo
+from vinted_sniper.vinted.models import parse_item
 from vinted_sniper.vinted.session import SessionManager
 from vinted_sniper.vinted.taxonomy import Taxonomy
 from vinted_sniper.vinted.transport import Response
@@ -234,6 +236,30 @@ async def test_the_dashboard_shows_what_is_being_watched(signed_in: TestClient, 
 
     assert "my search" in body
     assert "vinted.fr" in body
+
+
+async def test_found_listings_render_as_cards_with_their_gallery(
+    signed_in: TestClient, repo: Repo, make_item: Callable[..., dict[str, Any]]
+) -> None:
+    signed_in.post(
+        "/searches",
+        data={"url": "https://www.vinted.fr/catalog?search_text=nike", "name": "my search"},
+        follow_redirects=False,
+    )
+    query = (await repo.list_queries())[0]
+    item = parse_item(make_item(123, photo_ts=1_755_000_000), "fr")
+    await repo.record_new_items(query, [item], [])
+
+    body = signed_in.get("/").text
+
+    assert "listing-grid" in body
+    # The whole gallery travels to the page so the lightbox needs no more requests.
+    assert "https://images.vinted.net/123.jpeg" in body
+    assert "123-back.jpeg" in body
+    assert "2 ▣" in body
+    assert "@seller" in body
+    assert "⭐ 4.5" in body  # feedback_reputation 0.9, on the five-star scale
+    assert "Nike" in body
 
 
 def test_the_health_api_answers_with_the_snapshot(signed_in: TestClient) -> None:

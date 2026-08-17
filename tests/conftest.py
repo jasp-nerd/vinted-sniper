@@ -132,6 +132,10 @@ def make_item() -> Callable[..., dict[str, Any]]:
                 "full_size_url": f"https://images.vinted.net/{item_id}.jpeg",
                 "high_resolution": {"id": str(item_id), "timestamp": photo_ts},
             },
+            "photos": [
+                {"full_size_url": f"https://images.vinted.net/{item_id}.jpeg"},
+                {"full_size_url": f"https://images.vinted.net/{item_id}-back.jpeg"},
+            ],
             "user": {"id": 1, "login": "seller", "feedback_reputation": 0.9},
             "promoted": False,
         }

@@ -248,24 +248,122 @@
 
 <section>
   <h2>Recently found</h2>
+  {% if not recent %}
   <div class="card">
-    {% if not recent %}
-      <p class="muted" style="margin:0">Nothing yet.</p>
-    {% else %}
-    <table>
-      <tr><th>Listing</th><th>Price</th><th>Search</th><th>Seen</th></tr>
-      {% for row in recent %}
-      <tr>
-        <td><a href="{{ row['url'] }}" target="_blank" rel="noreferrer">{{ row['title'] }}</a></td>
-        <td>{{ row['total_price'] or row['price'] }} {{ row['currency'] or '' }}</td>
-        <td class="muted">{{ row['query_name'] or '—' }}</td>
-        <td class="muted">{{ now - row['first_seen_at'] }}s ago</td>
-      </tr>
-      {% endfor %}
-    </table>
-    {% endif %}
+    <p class="muted" style="margin:0">Nothing yet.</p>
   </div>
+  {% else %}
+  <div class="listing-grid">
+    {% for row in recent %}
+    <article class="listing">
+      {% if row.photos %}
+      <button type="button" class="photo" data-photos='{{ row.photos | tojson }}'
+              aria-label="View {{ row.photos | length }} photo{{ 's' if row.photos | length > 1 }} of {{ row.title }}">
+        <img src="{{ row.photos[0] }}" alt="" loading="lazy">
+        {% if row.photos | length > 1 %}
+        <span class="count">{{ row.photos | length }} ▣</span>
+        {% endif %}
+      </button>
+      {% else %}
+      <div class="no-photo">no photo</div>
+      {% endif %}
+      <div class="body">
+        <a class="title" href="{{ row.url }}" target="_blank" rel="noreferrer"
+           title="{{ row.title }}">{{ row.title }}</a>
+        <div class="price">
+          <strong>{{ row.price or '—' }}</strong>
+          {% if row.total_price %}<span class="muted">{{ row.total_price }} total</span>{% endif %}
+        </div>
+        {% if row.brand or row.size or row.condition %}
+        <div class="tags">
+          {% if row.brand %}<span class="tag brand">{{ row.brand }}</span>{% endif %}
+          {% if row.size %}<span class="tag">{{ row.size }}</span>{% endif %}
+          {% if row.condition %}<span class="tag">{{ row.condition }}</span>{% endif %}
+        </div>
+        {% endif %}
+        {% if row.seller_login or row.seller_stars or row.favourite_count %}
+        <div class="meta">
+          {% if row.seller_login %}
+            {% if row.seller_url %}
+            <a href="{{ row.seller_url }}" target="_blank" rel="noreferrer">@{{ row.seller_login }}</a>
+            {% else %}<span>@{{ row.seller_login }}</span>{% endif %}
+          {% endif %}
+          {% if row.seller_stars %}
+          <span>⭐ {{ row.seller_stars }}{% if row.seller_feedback_count %} ({{ row.seller_feedback_count }}){% endif %}</span>
+          {% endif %}
+          {% if row.favourite_count %}<span>♥ {{ row.favourite_count }}</span>{% endif %}
+        </div>
+        {% endif %}
+        <div class="meta foot">
+          <span class="search-name">{{ row.query_name or '—' }}</span>
+          <span class="age">{{ row.age }}</span>
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% endif %}
 </section>
+
+{% if recent %}
+<div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true"
+     aria-label="Listing photos">
+  <button type="button" class="lb-close" aria-label="Close">×</button>
+  <button type="button" class="lb-prev" aria-label="Previous photo">‹</button>
+  <img id="lb-img" src="" alt="Listing photo">
+  <button type="button" class="lb-next" aria-label="Next photo">›</button>
+  <span class="lb-counter" id="lb-counter"></span>
+</div>
+<script>
+(() => {
+  "use strict";
+  const box = document.getElementById("lightbox");
+  const img = document.getElementById("lb-img");
+  const counter = document.getElementById("lb-counter");
+  const prev = box.querySelector(".lb-prev");
+  const next = box.querySelector(".lb-next");
+  let photos = [];
+  let index = 0;
+
+  function show(i) {
+    index = (i + photos.length) % photos.length;
+    img.src = photos[index];
+    counter.textContent = `${index + 1} / ${photos.length}`;
+    const single = photos.length < 2;
+    prev.hidden = next.hidden = counter.hidden = single;
+  }
+
+  function close() {
+    box.hidden = true;
+    img.src = "";
+    document.body.style.overflow = "";
+  }
+
+  for (const button of document.querySelectorAll(".listing .photo")) {
+    button.addEventListener("click", () => {
+      photos = JSON.parse(button.dataset.photos);
+      if (!photos.length) return;
+      box.hidden = false;
+      document.body.style.overflow = "hidden"; // the page should not scroll underneath
+      show(0);
+    });
+  }
+
+  box.querySelector(".lb-close").addEventListener("click", close);
+  prev.addEventListener("click", () => show(index - 1));
+  next.addEventListener("click", () => show(index + 1));
+  box.addEventListener("click", (event) => {
+    if (event.target === box) close();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (box.hidden) return;
+    if (event.key === "Escape") close();
+    if (event.key === "ArrowLeft") show(index - 1);
+    if (event.key === "ArrowRight") show(index + 1);
+  });
+})();
+</script>
+{% endif %}
 
 {% if builder_enabled %}
 <script>
