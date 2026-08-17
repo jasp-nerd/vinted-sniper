@@ -30,6 +30,10 @@ def notification(item_id: int, **kwargs: Any) -> PendingNotification:
         "condition": "Very good",
         "photo_url": f"https://images.vinted.net/{item_id}.jpeg",
         "photo_ts": 1_760_000_000,
+        "seller_login": "sneakerfan",
+        "seller_id": 12_345_678,
+        "seller_rating": 0.96,
+        "seller_feedback_count": 128,
     }
     defaults.update(kwargs)
     return PendingNotification(
@@ -39,6 +43,7 @@ def notification(item_id: int, **kwargs: Any) -> PendingNotification:
         query_name="my search",
         attempts=0,
         item=Item(**defaults),
+        detected_at=1_760_000_100,
     )
 
 
@@ -70,7 +75,7 @@ def fast_bucket() -> TokenBucket:
 # --- Discord -----------------------------------------------------------------------
 
 
-async def test_a_few_listings_arrive_one_per_message_with_buttons() -> None:
+async def test_a_few_listings_arrive_one_rich_message_each() -> None:
     recorder = Recorder()
     sender = DiscordSender(
         {"webhook_url": "https://discord.test/hook"},
@@ -83,11 +88,61 @@ async def test_a_few_listings_arrive_one_per_message_with_buttons() -> None:
     assert result.delivered == [1, 2]
     assert len(recorder.requests) == 2
     payload = recorder.payload(0)
-    labels = [c["label"] for c in payload["components"][0]["components"]]
-    assert labels == ["Open listing", "Message seller", "Buy"]
+    assert payload["username"] == "Vinted Sniper"
+    assert payload["avatar_url"].endswith(".png")
+    assert len(payload["embeds"]) == 1
 
 
-async def test_many_listings_are_batched_into_one_message() -> None:
+async def test_the_embed_reads_like_a_listing_card() -> None:
+    recorder = Recorder()
+    sender = DiscordSender(
+        {"webhook_url": "https://discord.test/hook"},
+        dashboard_url="http://127.0.0.1:8000",
+        client=recorder.client(),
+        bucket=fast_bucket(),
+    )
+
+    await sender.send([notification(1)])
+
+    embed = recorder.payload()["embeds"][0]
+    assert embed["author"]["name"] == "New match • my search"
+    assert embed["title"] == "Item 1"
+    assert embed["url"] == "https://www.vinted.fr/items/1"
+    assert embed["description"] == (
+        "**[View item](https://www.vinted.fr/items/1)**"
+        "  •  [Dashboard](http://127.0.0.1:8000)"
+        "  •  [Seller](https://www.vinted.fr/member/12345678)"
+    )
+    assert embed["image"]["url"] == "https://images.vinted.net/1.jpeg"
+    assert embed["footer"]["text"] == "Vinted Sniper • vinted.fr"
+    assert embed["timestamp"].startswith("2025-10-09")
+
+    by_name = {field["name"]: field["value"] for field in embed["fields"]}
+    assert by_name["Location"] == "🇫🇷 FR"
+    assert by_name["Seller rating"] == "⭐ 4.8 (128)"
+    assert by_name["Seller"] == "@sneakerfan"
+    assert by_name["Detected"] == "<t:1760000100:R>"
+
+
+async def test_links_shrink_to_what_actually_exists() -> None:
+    recorder = Recorder()
+    sender = DiscordSender(
+        {"webhook_url": "https://discord.test/hook"},
+        client=recorder.client(),
+        bucket=fast_bucket(),
+    )
+
+    await sender.send([notification(1, seller_id=None, seller_login=None, seller_rating=None)])
+
+    embed = recorder.payload()["embeds"][0]
+    assert embed["description"] == "**[View item](https://www.vinted.fr/items/1)**", (
+        "no dashboard configured and no seller id means no dead links"
+    )
+    names = [field["name"] for field in embed["fields"]]
+    assert "Seller" not in names and "Seller rating" not in names
+
+
+async def test_many_listings_are_stacked_into_one_message() -> None:
     recorder = Recorder()
     sender = DiscordSender(
         {"webhook_url": "https://discord.test/hook"},
@@ -99,41 +154,11 @@ async def test_many_listings_are_batched_into_one_message() -> None:
 
     assert len(recorder.requests) == 1, "six separate messages would be a wall of noise"
     assert len(result.delivered) == 6
-    assert len(recorder.payload()["embeds"]) == 6
-
-
-async def test_a_mid_size_batch_keeps_a_numbered_button_row_per_listing() -> None:
-    recorder = Recorder()
-    sender = DiscordSender(
-        {"webhook_url": "https://discord.test/hook"},
-        client=recorder.client(),
-        bucket=fast_bucket(),
+    embeds = recorder.payload()["embeds"]
+    assert len(embeds) == 6
+    assert all("[View item]" in embed["description"] for embed in embeds), (
+        "stacked embeds must each stay self-contained"
     )
-
-    await sender.send([notification(i) for i in range(1, 6)])
-
-    payload = recorder.payload()
-    assert len(payload["components"]) == 5, "one row per listing, matched to its embed"
-    assert payload["embeds"][2]["title"].startswith("#3 · ")
-    labels = [c["label"] for c in payload["components"][2]["components"]]
-    assert labels == ["#3 Message seller", "#3 Buy"]
-
-
-async def test_a_large_batch_moves_the_links_into_each_embed() -> None:
-    recorder = Recorder()
-    sender = DiscordSender(
-        {"webhook_url": "https://discord.test/hook"},
-        client=recorder.client(),
-        bucket=fast_bucket(),
-    )
-
-    await sender.send([notification(i) for i in range(1, 7)])
-
-    payload = recorder.payload()
-    assert "components" not in payload, "six rows of buttons would exceed Discord's five"
-    links = payload["embeds"][0]["fields"][-1]
-    assert links["name"] == "Links"
-    assert "Message seller" in links["value"] and "Buy" in links["value"]
 
 
 async def test_every_embed_carries_its_own_listing_link() -> None:
@@ -161,8 +186,7 @@ async def test_the_total_price_is_what_gets_shown() -> None:
     await sender.send([notification(1)])
 
     price_field = recorder.payload()["embeds"][0]["fields"][0]
-    assert "16.45" in price_field["value"]
-    assert "with protection" in price_field["value"]
+    assert price_field["value"] == "**15.00 EUR**\n16.45 EUR total"
 
 
 async def test_a_deleted_webhook_is_switched_off_rather_than_retried() -> None:

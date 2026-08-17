@@ -175,6 +175,11 @@ def item_url(tld: str, item_id: int) -> str:
     return f"https://www.vinted.{tld}/items/{item_id}"
 
 
+def member_url(tld: str, user_id: int) -> str:
+    """A seller's profile page. The site accepts the bare id; no login slug needed."""
+    return f"https://www.vinted.{tld}/member/{user_id}"
+
+
 def message_seller_url(tld: str, item_id: int) -> str:
     """Deep link to the 'ask the seller' screen for a listing."""
     return f"https://www.vinted.{tld}/items/{item_id}/want_it/new"

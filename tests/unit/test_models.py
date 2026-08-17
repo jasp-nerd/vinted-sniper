@@ -24,7 +24,7 @@ def catalog_entry(**overrides: Any) -> dict[str, Any]:
             "full_size_url": "https://images.vinted.net/full.jpeg",
             "high_resolution": {"id": "abc", "timestamp": 1_755_374_000},
         },
-        "user": {"id": 7, "login": "seller", "feedback_reputation": 0.93},
+        "user": {"id": 7, "login": "seller", "feedback_reputation": 0.93, "feedback_count": 41},
         "promoted": False,
         "favourite_count": 2,
         "view_count": 11,
@@ -47,7 +47,17 @@ def test_a_full_entry_parses() -> None:
     assert item.currency == "EUR"
     assert item.photo_ts == 1_755_374_000
     assert item.seller_login == "seller"
+    assert item.seller_id == 7
+    assert item.seller_feedback_count == 41
+    assert item.seller_url == "https://www.vinted.fr/member/7"
     assert item.tld == "fr"
+
+
+def test_an_anonymous_listing_has_no_seller_link() -> None:
+    item = parse_item(catalog_entry(user=None), "fr")
+
+    assert item.seller_url is None
+    assert item.seller_feedback_count is None
 
 
 def test_total_price_is_kept_apart_from_the_asking_price() -> None:

@@ -66,6 +66,7 @@ was found, so you can see the real delay yourself.
 | `WEB_AUTH_TOKEN` | unset | Optional. With no token the dashboard has no sign-in, which is fine while it listens on localhost. **Set one before exposing it further** — it shows your webhook URLs and chat ids. Generate with `openssl rand -hex 32`. |
 | `WEB_HOST` | `127.0.0.1` | Loopback by default. Only widen behind a reverse proxy you trust. |
 | `WEB_PORT` | `8000` | |
+| `WEB_PUBLIC_URL` | unset | The address the dashboard is reachable at from wherever you read your alerts — set it when the dashboard sits behind a reverse proxy or a tunnel. It becomes the Dashboard link in Discord messages; unset, that link points at `http://<WEB_HOST>:<WEB_PORT>`. |
 
 ### Logging and development
 

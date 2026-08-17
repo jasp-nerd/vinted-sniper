@@ -66,8 +66,8 @@ d'hébergement](docs/self-hosting.md).
   <img src="docs/media/builder.png" width="820" alt="Le constructeur de recherche du tableau de bord : site, texte et prix, l'arbre de catégories de Vinted, l'autocomplétion des marques, et les cases état et couleur avec le nombre d'articles">
   <br><sub>Le constructeur de recherche</sub>
   <br><br>
-  <img src="docs/media/discord.png" width="820" alt="Une notification Discord : titre, prix protection acheteurs comprise, taille, marque, état, vendeur et photo, avec les boutons pour ouvrir l'annonce, contacter le vendeur ou acheter">
-  <br><sub><b>Discord</b> — un message par annonce, regroupés en encarts quand plusieurs arrivent d'un coup</sub>
+  <img src="docs/media/discord.png" width="820" alt="Une notification Discord : la recherche correspondante, le titre menant à l'annonce, les liens vers l'annonce, le tableau de bord et le vendeur, puis prix protection acheteurs comprise, taille, état, marque, pays, note du vendeur et photo">
+  <br><sub><b>Discord</b> — une fiche riche par annonce, regroupées en encarts quand plusieurs arrivent d'un coup</sub>
   <br><br>
   <img src="docs/media/telegram.png" width="820" alt="La même notification dans Telegram : aperçu photo, prix protection acheteurs comprise, marque, taille, état, vendeur et les trois mêmes boutons">
   <br><sub><b>Telegram</b> — la photo en aperçu, pour que le message garde ses boutons</sub>

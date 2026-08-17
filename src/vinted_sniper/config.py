@@ -140,6 +140,25 @@ class Settings(BaseSettings):
         description="Optional. When set, the dashboard asks for it as a password. Set it "
         "before exposing the dashboard beyond localhost: it shows your webhook URLs.",
     )
+    web_public_url: str | None = Field(
+        default=None,
+        description="The address the dashboard is reachable at from wherever you read your "
+        "alerts — set it when the dashboard sits behind a reverse proxy or a tunnel. It "
+        "becomes the Dashboard link in Discord messages. Unset, that link points at "
+        "http://<web_host>:<web_port>.",
+    )
+
+    @property
+    def dashboard_url(self) -> str | None:
+        """Where a notification may link the dashboard, or None while the web UI is off."""
+        if not self.web_enabled:
+            return None
+        if self.web_public_url:
+            return self.web_public_url.rstrip("/")
+        # A wildcard bind is an instruction to the server, not an address a reader's
+        # browser can open; loopback is the only honest guess left.
+        host = "127.0.0.1" if self.web_host in {"0.0.0.0", "::"} else self.web_host
+        return f"http://{host}:{self.web_port}"
 
     @property
     def web_is_loopback(self) -> bool:

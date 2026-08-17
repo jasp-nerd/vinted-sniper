@@ -46,7 +46,11 @@ class Item(BaseModel):
     photo_ts: int | None = None
 
     seller_login: str | None = None
+    seller_id: int | None = None
     seller_rating: float | None = None
+    # How many reviews sit behind the rating. A 4.8 from three reviews and a 4.8 from
+    # three hundred are different offers, so notifications show both together.
+    seller_feedback_count: int | None = None
 
     promoted: bool = False
     favourite_count: int = 0
@@ -69,6 +73,12 @@ class Item(BaseModel):
     @property
     def buy_url(self) -> str:
         return urls.buy_url(self.tld, self.item_id)
+
+    @property
+    def seller_url(self) -> str | None:
+        if self.seller_id is None:
+            return None
+        return urls.member_url(self.tld, self.seller_id)
 
     def price_line(self) -> str:
         """Price as a human reads it, showing the total when it differs from the ask."""
@@ -153,7 +163,9 @@ def parse_item(payload: dict[str, Any], tld: str, *, keep_raw: bool = False) -> 
         photo_url=_first(photo, "full_size_url", "url"),
         photo_ts=_coerce_int(_first(photo, "high_resolution.timestamp")),
         seller_login=_text(_first(user, "login")),
+        seller_id=_coerce_int(_first(user, "id")),
         seller_rating=_coerce_float(_first(user, "feedback_reputation")),
+        seller_feedback_count=_coerce_int(_first(user, "feedback_count")),
         promoted=bool(_first(payload, "promoted") or False),
         favourite_count=_coerce_int(_first(payload, "favourite_count")) or 0,
         view_count=_coerce_int(_first(payload, "view_count")) or 0,

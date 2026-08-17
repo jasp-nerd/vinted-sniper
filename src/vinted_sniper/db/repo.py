@@ -82,6 +82,9 @@ class PendingNotification:
     query_name: str
     attempts: int
     item: Item
+    # When the poller first saw the listing, which is the honest "found it" moment even
+    # if delivery retries push the message out later.
+    detected_at: int | None = None
 
 
 def _json_list(raw: str | None) -> list[str] | None:
@@ -382,8 +385,9 @@ class Repo:
             await conn.executemany(
                 "INSERT OR IGNORE INTO items (item_id, query_id, tld, title, brand, size, "
                 "condition, price, total_price, currency, url, photo_url, photo_ts, "
-                "seller_login, seller_rating, raw_json, first_seen_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "seller_login, seller_id, seller_rating, seller_feedback_count, "
+                "raw_json, first_seen_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 [
                     (
                         item.item_id,
@@ -400,7 +404,9 @@ class Repo:
                         item.photo_url,
                         item.photo_ts,
                         item.seller_login,
+                        item.seller_id,
                         item.seller_rating,
+                        item.seller_feedback_count,
                         json.dumps(item.raw) if (keep_raw and item.raw) else None,
                         now,
                     )
@@ -492,8 +498,11 @@ class Repo:
                     photo_url=row["photo_url"],
                     photo_ts=row["photo_ts"],
                     seller_login=row["seller_login"],
+                    seller_id=row["seller_id"],
                     seller_rating=row["seller_rating"],
+                    seller_feedback_count=row["seller_feedback_count"],
                 ),
+                detected_at=row["first_seen_at"],
             )
             for row in rows
         ]

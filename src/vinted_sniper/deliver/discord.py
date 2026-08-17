@@ -4,6 +4,12 @@ A webhook is the whole integration: paste a URL, get notifications. No bot to in
 gateway connection to keep alive, and when someone deletes the webhook we get a clean 404
 instead of a bot that silently stops working.
 
+Every listing renders as one rich embed: an author line naming the search it matched, the
+title linking to the listing, a row of links (item, dashboard, seller), an inline grid of
+the facts a buying decision needs — total price included — and the photo full width. The
+links live in the embed itself rather than in buttons, so a single listing and a batch of
+ten read identically and nothing is lost when embeds are stacked.
+
 Two details are doing real work here. Discord collapses embeds that share a link, so every
 embed carries its own listing URL rather than the search's. And rejected requests count
 against an allowance that, once spent, gets the whole address blocked — so a destination
@@ -12,6 +18,8 @@ that answers 404 is switched off rather than retried.
 
 from __future__ import annotations
 
+import time
+from datetime import UTC, datetime
 from http import HTTPStatus
 from typing import Any
 
@@ -28,22 +36,24 @@ log = get_logger(__name__)
 # Discord's own cap on embeds in one message.
 MAX_EMBEDS = 10
 
-# Above this many listings at once, one message per listing turns into a wall. Batching
-# them into embeds keeps it readable.
-BUTTON_THRESHOLD = 3
-
-# A message holds at most five rows of buttons, so a batch up to this size can give each
-# listing its own row, tied to its embed by number. Past that the links move into the
-# embeds themselves.
-MAX_BUTTON_ROWS = 5
+# Up to this many listings at once, each gets its own message — the shape people expect
+# an alert to have. Past it, one message per listing turns into a wall, so the embeds
+# stack into a single message instead.
+STACK_THRESHOLD = 3
 
 # The documented per-webhook limit is around five requests every two seconds, but webhooks
 # in the same server have been observed sharing one allowance. One request every half
 # second stays clear of both.
 REQUESTS_PER_S = 2.0
 
-BRAND_COLOUR = 0x09B1BA
-LINK_BUTTON = 5
+BOT_NAME = "Vinted Sniper"
+# The dart-on-target emoji as a hosted PNG, shown as the webhook's avatar and in footers.
+ICON_URL = "https://cdn.jsdelivr.net/gh/jdecked/twemoji@15.1.0/assets/72x72/1f3af.png"
+BRAND_COLOUR = 0x007782
+
+# Vinted's country sites named by the ISO code their flag needs. Everything not listed is
+# already its own ISO code.
+_ISO_BY_TLD = {"co.uk": "GB", "com": "US"}
 
 
 class DiscordSender:
@@ -55,10 +65,12 @@ class DiscordSender:
         self,
         config: dict[str, Any],
         *,
+        dashboard_url: str | None = None,
         client: httpx.AsyncClient | None = None,
         bucket: TokenBucket | None = None,
     ) -> None:
         self._url = require(config, "webhook_url", self.kind)
+        self._dashboard_url = dashboard_url
         self._client = client or httpx.AsyncClient(timeout=20.0)
         self._owns_client = client is None
         self._bucket = bucket or TokenBucket(REQUESTS_PER_S, capacity=3)
@@ -71,11 +83,11 @@ class DiscordSender:
         if not batch:
             return SendResult.ok([])
 
-        if len(batch) <= BUTTON_THRESHOLD:
+        if len(batch) <= STACK_THRESHOLD:
             delivered: list[int] = []
             for notification in batch:
                 result = await self._post(
-                    self._single_message(notification), [notification.outbox_id]
+                    self._message([self._embed(notification)]), [notification.outbox_id]
                 )
                 if result.delivered:
                     delivered.extend(result.delivered)
@@ -94,26 +106,69 @@ class DiscordSender:
             return SendResult.ok(delivered)
 
         chunk = batch[:MAX_EMBEDS]
-        if len(chunk) <= MAX_BUTTON_ROWS:
-            payload = {
-                "embeds": [
-                    _embed(n.item, n.query_name, number=i) for i, n in enumerate(chunk, start=1)
-                ],
-                "components": [_button_row(n.item, i) for i, n in enumerate(chunk, start=1)],
-            }
-        else:
-            payload = {"embeds": [_embed(n.item, n.query_name, link_field=True) for n in chunk]}
+        payload = self._message([self._embed(n) for n in chunk])
         return await self._post(payload, [n.outbox_id for n in chunk])
 
     async def send_status(self, message: str) -> None:
-        await self._post({"content": message[:2000]}, [])
+        await self._post(
+            {"content": message[:2000], "username": BOT_NAME, "avatar_url": ICON_URL}, []
+        )
+
+    def _message(self, embeds: list[dict[str, Any]]) -> dict[str, Any]:
+        return {"username": BOT_NAME, "avatar_url": ICON_URL, "embeds": embeds}
+
+    def _embed(self, notification: PendingNotification) -> dict[str, Any]:
+        item = notification.item
+        detected = notification.detected_at or int(time.time())
+
+        links = [f"**[View item]({item.url})**"]
+        if self._dashboard_url:
+            links.append(f"[Dashboard]({self._dashboard_url})")
+        if item.seller_url:
+            links.append(f"[Seller]({item.seller_url})")
+
+        fields: list[dict[str, Any]] = []
+        if item.price is not None:
+            fields.append({"name": "Price", "value": _price_value(item), "inline": True})
+        if item.size:
+            fields.append({"name": "Size", "value": item.size[:1024], "inline": True})
+        if item.condition:
+            fields.append({"name": "Condition", "value": item.condition[:1024], "inline": True})
+        if item.brand:
+            fields.append({"name": "Brand", "value": item.brand[:1024], "inline": True})
+        fields.append({"name": "Location", "value": _location(item.tld), "inline": True})
+        if item.seller_rating is not None:
+            fields.append({"name": "Seller rating", "value": _rating(item), "inline": True})
+        if item.seller_login:
+            fields.append(
+                {"name": "Seller", "value": f"@{item.seller_login}"[:1024], "inline": True}
+            )
+        # Discord renders this in the reader's own timezone, as "2 minutes ago".
+        fields.append({"name": "Detected", "value": f"<t:{detected}:R>", "inline": True})
+
+        embed: dict[str, Any] = {
+            "author": {"name": f"New match • {notification.query_name}"[:256]},
+            "title": item.title[:256],
+            # Distinct per listing on purpose: Discord folds together embeds that share
+            # a URL.
+            "url": item.url,
+            "color": BRAND_COLOUR,
+            "description": "  •  ".join(links),
+            "fields": fields,
+            "footer": {
+                "text": f"{BOT_NAME} • vinted.{item.tld}"[:2048],
+                "icon_url": ICON_URL,
+            },
+            "timestamp": datetime.fromtimestamp(detected, tz=UTC).isoformat(),
+        }
+        if item.photo_url:
+            embed["image"] = {"url": item.photo_url}
+        return embed
 
     async def _post(self, payload: dict[str, Any], outbox_ids: list[int]) -> SendResult:
         await self._bucket.acquire()
         try:
-            response = await self._client.post(
-                self._url, json=payload, params={"with_components": "true"}
-            )
+            response = await self._client.post(self._url, json=payload)
         except httpx.HTTPError as exc:
             return SendResult.transient(outbox_ids, f"could not reach Discord: {exc}")
 
@@ -156,97 +211,37 @@ class DiscordSender:
 
         return SendResult.transient(outbox_ids, f"Discord answered {response.status_code}")
 
-    def _single_message(self, notification: PendingNotification) -> dict[str, Any]:
-        item = notification.item
-        return {
-            "embeds": [_embed(item, notification.query_name)],
-            "components": [
-                {
-                    "type": 1,
-                    "components": [
-                        {"type": 2, "style": LINK_BUTTON, "label": "Open listing", "url": item.url},
-                        {
-                            "type": 2,
-                            "style": LINK_BUTTON,
-                            "label": "Message seller",
-                            "url": item.message_url,
-                        },
-                        {"type": 2, "style": LINK_BUTTON, "label": "Buy", "url": item.buy_url},
-                    ],
-                }
-            ],
-        }
-
     async def aclose(self) -> None:
         if self._owns_client:
             await self._client.aclose()
 
 
-def _button_row(item: Item, number: int) -> dict[str, Any]:
-    """One row of link buttons for one listing in a batched message.
+def _price_value(item: Item) -> str:
+    """The asking price in bold, with the real total under it when the two differ.
 
-    The number ties the row to its embed, whose title carries the same prefix. No "open"
-    button: that numbered title is already the listing link.
+    The total — buyer protection included — is the number a buying decision compares, so
+    it must be visible even though Vinted leads with the smaller figure.
     """
-    return {
-        "type": 1,
-        "components": [
-            {
-                "type": 2,
-                "style": LINK_BUTTON,
-                "label": f"#{number} Message seller",
-                "url": item.message_url,
-            },
-            {"type": 2, "style": LINK_BUTTON, "label": f"#{number} Buy", "url": item.buy_url},
-        ],
-    }
+    currency = f" {item.currency}" if item.currency else ""
+    value = f"**{item.price}{currency}**"
+    if item.total_price is not None and item.total_price != item.price:
+        value += f"\n{item.total_price}{currency} total"
+    return value
 
 
-def _embed(
-    item: Item, query_name: str, *, number: int | None = None, link_field: bool = False
-) -> dict[str, Any]:
-    fields: list[dict[str, Any]] = [{"name": "Price", "value": item.price_line(), "inline": True}]
-    if item.size:
-        fields.append({"name": "Size", "value": item.size[:1024], "inline": True})
-    if item.brand:
-        fields.append({"name": "Brand", "value": item.brand[:1024], "inline": True})
-    if item.condition:
-        fields.append({"name": "Condition", "value": item.condition[:1024], "inline": True})
-    if item.seller_login:
-        seller = item.seller_login[:900]
-        if item.seller_rating is not None:
-            seller += f" ({item.seller_rating:.0%})"
-        fields.append({"name": "Seller", "value": seller, "inline": True})
-    if item.listed_at:
-        # Discord renders this in the reader's own timezone, as "3 minutes ago".
-        fields.append(
-            {
-                "name": "Listed",
-                "value": f"<t:{int(item.listed_at.timestamp())}:R>",
-                "inline": True,
-            }
-        )
-    if link_field:
-        fields.append(
-            {
-                "name": "Links",
-                "value": f"[Message seller]({item.message_url}) · [Buy]({item.buy_url})",
-                "inline": True,
-            }
-        )
+def _location(tld: str) -> str:
+    """The country site the listing is on, as a flag and ISO code."""
+    iso = _ISO_BY_TLD.get(tld, tld.upper())
+    flag = "".join(chr(0x1F1E6 + ord(letter) - ord("A")) for letter in iso)
+    return f"{flag} {iso}"
 
-    title = item.title if number is None else f"#{number} · {item.title}"
-    embed: dict[str, Any] = {
-        "title": title[:256],
-        # Distinct per listing on purpose: Discord folds together embeds that share a URL.
-        "url": item.url,
-        "color": BRAND_COLOUR,
-        "fields": fields,
-        "footer": {"text": f"vinted.{item.tld} · {query_name}"[:2048]},
-    }
-    if item.photo_url:
-        embed["image"] = {"url": item.photo_url}
-    return embed
+
+def _rating(item: Item) -> str:
+    """Vinted's 0..1 reputation as the five-star figure users know, with its review count."""
+    stars = round((item.seller_rating or 0.0) * 50) / 10
+    if item.seller_feedback_count:
+        return f"⭐ {stars:.1f} ({item.seller_feedback_count})"
+    return f"⭐ {stars:.1f}"
 
 
 def _retry_after(response: httpx.Response) -> float:

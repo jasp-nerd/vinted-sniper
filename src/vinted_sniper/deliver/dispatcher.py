@@ -217,7 +217,9 @@ class Dispatcher:
         config: dict[str, Any] = destination.config
         match destination.kind:
             case "discord":
-                return DiscordSender(config, client=self._client)
+                return DiscordSender(
+                    config, dashboard_url=self._settings.dashboard_url, client=self._client
+                )
             case "telegram":
                 token = self._settings.telegram_bot_token
                 if token is None:
