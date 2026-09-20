@@ -35,7 +35,7 @@ jobs:
           # No job here pushes, so the token has no reason to stay in .git/config.
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
         with:
           enable-cache: true
           cache-dependency-glob: uv.lock
@@ -60,7 +60,7 @@ jobs:
           # No job here pushes, so the token has no reason to stay in .git/config.
           persist-credentials: false
 
-      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
         with:
           enable-cache: true
           cache-dependency-glob: uv.lock
@@ -120,14 +120,14 @@ jobs:
           # No job here pushes, so the token has no reason to stay in .git/config.
           persist-credentials: false
 
-      - uses: docker/setup-qemu-action@1f40c72289eff860ee54a304f1438e3cff362e0a # v4.3.0
-      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
       # arm64 is built on main because the docs lead with a Raspberry Pi: an aarch64-only
       # break should surface here rather than after it reaches the published image.
       # Emulated builds are slow, so pull requests stay on amd64.
       - name: Build
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           push: false
